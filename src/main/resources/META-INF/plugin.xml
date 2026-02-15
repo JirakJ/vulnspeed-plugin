@@ -1,0 +1,147 @@
+<idea-plugin>
+    <id>com.jakubjirak.vulnspeed</id>
+    <name>VulnSpeed - GPU-Accelerated SAST</name>
+    <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
+
+    <description><![CDATA[
+        <h2>GPU-Accelerated Static Application Security Testing</h2>
+        <p><strong>Fast vulnerability detection</strong> with real-time scanning.</p>
+        <ul>
+            <li>Real-time vulnerability detection as you type</li>
+            <li>Support for Java, Kotlin, Python, JavaScript, TypeScript, Swift, C/C++</li>
+            <li>OWASP Top 10, CWE Top 25 coverage</li>
+            <li>Auto-fix suggestions with one-click security fixes</li>
+            <li>Security dashboard with vulnerability metrics</li>
+        </ul>
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <h4>Release 2026.2.1</h4>
+        <ul>
+            <li>Modernized build system to IntelliJ Platform Gradle Plugin 2.x</li>
+            <li>Consolidated to single-module project</li>
+        </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <globalInspection
+            implementationClass="com.jakubjirak.vulnspeed.inspection.VulnSpeedGlobalInspection"
+            displayName="VulnSpeed Security Analysis"
+            groupName="Security"
+            enabledByDefault="true"
+            level="WARNING"
+            shortName="VulnSpeed"/>
+
+        <annotator
+            language="JAVA"
+            implementationClass="com.jakubjirak.vulnspeed.editor.VulnSpeedAnnotator"/>
+
+        <annotator
+            language="Python"
+            implementationClass="com.jakubjirak.vulnspeed.editor.VulnSpeedAnnotator"/>
+
+        <annotator
+            language="JavaScript"
+            implementationClass="com.jakubjirak.vulnspeed.editor.VulnSpeedAnnotator"/>
+
+        <annotator
+            language="TypeScript"
+            implementationClass="com.jakubjirak.vulnspeed.editor.VulnSpeedAnnotator"/>
+
+        <toolWindow
+            id="VulnSpeed"
+            anchor="bottom"
+            secondary="false"
+            factoryClass="com.jakubjirak.vulnspeed.ui.VulnSpeedToolWindowFactory"
+            canCloseContents="false"
+            doNotActivateOnStart="true"/>
+
+        <projectService
+            serviceImplementation="com.jakubjirak.vulnspeed.settings.VulnSpeedProjectSettings"/>
+
+        <projectConfigurable
+            parentId="tools"
+            instance="com.jakubjirak.vulnspeed.settings.VulnSpeedProjectConfigurable"
+            displayName="VulnSpeed"
+            nonDefaultProject="true"/>
+
+        <applicationService
+            serviceImplementation="com.jakubjirak.vulnspeed.settings.VulnSpeedAppSettings"/>
+
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.jakubjirak.vulnspeed.settings.VulnSpeedAppConfigurable"
+            displayName="VulnSpeed"
+            id="com.jakubjirak.vulnspeed"/>
+
+        <applicationService
+            serviceImplementation="com.jakubjirak.vulnspeed.licensing.LicenseManager"/>
+
+        <applicationService
+            serviceImplementation="com.jakubjirak.vulnspeed.licensing.SubscriptionManager"/>
+
+        <notificationGroup
+            id="VulnSpeed Notifications"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <applicationService
+            serviceImplementation="com.jakubjirak.vulnspeed.core.VulnSpeedEngine"/>
+    </extensions>
+
+    <actions>
+        <action
+            id="VulnSpeed.ActivateLicense"
+            class="com.jakubjirak.vulnspeed.actions.ActivateLicenseAction"
+            text="Activate License"
+            description="Activate your VulnSpeed Professional or Enterprise license"/>
+
+        <action
+            id="VulnSpeed.StartTrial"
+            class="com.jakubjirak.vulnspeed.actions.StartTrialAction"
+            text="Start Free Trial"
+            description="Start 14-day free trial of Professional tier"/>
+
+        <action
+            id="VulnSpeed.ManageSubscription"
+            class="com.jakubjirak.vulnspeed.actions.ManageSubscriptionAction"
+            text="Manage Subscription"
+            description="Open JetBrains Store to manage your subscription"/>
+
+        <action
+            id="VulnSpeed.LicenseSettings"
+            class="com.jakubjirak.vulnspeed.actions.LicenseSettingsAction"
+            text="License Settings"
+            description="View and manage your license information"/>
+
+        <action
+            id="VulnSpeed.ScanFile"
+            class="com.jakubjirak.vulnspeed.actions.ScanFileAction"
+            text="Scan File with VulnSpeed"
+            description="Run vulnerability analysis on current file">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
+        <action
+            id="VulnSpeed.ScanProject"
+            class="com.jakubjirak.vulnspeed.actions.ScanProjectAction"
+            text="Scan Project with VulnSpeed"
+            description="Run vulnerability analysis on entire project">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <group id="VulnSpeed.MainGroup" popup="true" text="VulnSpeed" description="VulnSpeed Security Analysis">
+            <reference ref="VulnSpeed.ScanFile"/>
+            <reference ref="VulnSpeed.ScanProject"/>
+            <separator/>
+            <reference ref="VulnSpeed.ActivateLicense"/>
+            <reference ref="VulnSpeed.StartTrial"/>
+            <separator/>
+            <reference ref="VulnSpeed.ManageSubscription"/>
+            <reference ref="VulnSpeed.LicenseSettings"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>

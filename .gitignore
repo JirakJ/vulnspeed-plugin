@@ -1,0 +1,11 @@
+/*.txt
+/*.md
+!README.md
+.idea
+.gradle
+.kotlin
+dist
+build
+.DS_Store
+.env
+.intellijPlatform
