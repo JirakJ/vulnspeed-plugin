@@ -5,16 +5,36 @@
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
     <description><![CDATA[
-        <h2>GPU-Accelerated Static Application Security Testing</h2>
-        <p><strong>Fast vulnerability detection</strong> with real-time scanning.</p>
-        <ul>
-            <li>Real-time vulnerability detection as you type</li>
-            <li>Support for Java, Kotlin, Python, JavaScript, TypeScript, Swift, C/C++</li>
-            <li>OWASP Top 10, CWE Top 25 coverage</li>
-            <li>Auto-fix suggestions with one-click security fixes</li>
-            <li>Security dashboard with vulnerability metrics</li>
-        </ul>
-    ]]></description>
+<h2>VulnSpeed — GPU-Accelerated SAST</h2>
+<p>
+  Security scanning at the speed of thought. VulnSpeed leverages GPU acceleration to perform static
+  application security testing in real time — detecting OWASP Top 10 and CWE Top 25 vulnerabilities
+  as you type, with one-click auto-fixes across 7 languages.
+</p>
+
+<h2>Key Features</h2>
+<ul>
+  <li><b>Real-Time Detection</b> — Finds vulnerabilities as you type, not at build time</li>
+  <li><b>GPU-Accelerated</b> — Massively parallel scanning engine for instant results on large codebases</li>
+  <li><b>OWASP Top 10 &amp; CWE Top 25</b> — Comprehensive coverage of critical vulnerability classes</li>
+  <li><b>One-Click Auto-Fix</b> — Automated remediation suggestions with instant apply</li>
+  <li><b>Security Dashboard</b> — Project-wide vulnerability metrics with severity breakdown</li>
+  <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, Swift, and C/C++</li>
+</ul>
+
+<h2>Why VulnSpeed?</h2>
+<p>
+  Traditional SAST tools are slow and disruptive. VulnSpeed's GPU-accelerated engine delivers the same
+  coverage in a fraction of the time — making security scanning a seamless part of your development flow
+  instead of a CI/CD bottleneck.
+</p>
+
+<h2>Free vs Pro</h2>
+<ul>
+  <li><b>Free:</b> Basic vulnerability scanning, OWASP Top 10 detection, inline warnings, auto-fix for common patterns</li>
+  <li><b>Pro:</b> Full CWE Top 25 coverage, GPU acceleration, advanced taint analysis, custom security rules, compliance reports (SOC 2, HIPAA, PCI DSS), CI/CD integration, and team security dashboards</li>
+</ul>
+]]></description>
 
     <change-notes><![CDATA[
         <h4>Release 2026.2.1</h4>
