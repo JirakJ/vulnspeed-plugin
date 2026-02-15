@@ -1,5 +1,6 @@
 <idea-plugin>
     <id>com.jakubjirak.vulnspeed</id>
+    <product-descriptor code="PVULNSPEED" release-date="20260215" release-version="20262" optional="true"/>
     <name>VulnSpeed - GPU-Accelerated SAST</name>
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
