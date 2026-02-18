@@ -5,42 +5,74 @@
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
     <description><![CDATA[
-<h2>VulnSpeed — GPU-Accelerated SAST</h2>
+<h2>VulnSpeed — GPU-Accelerated SAST for Real-Time Vulnerability Detection</h2>
+
 <p>
-  Security scanning at the speed of thought. VulnSpeed leverages GPU acceleration to perform static
-  application security testing in real time — detecting OWASP Top 10 and CWE Top 25 vulnerabilities
-  as you type, with one-click auto-fixes across 7 languages.
+  Security scanning at the speed of thought. VulnSpeed detects OWASP Top 10 and CWE Top 25
+  vulnerabilities as you type across 7 languages, with one-click auto-fixes and optional
+  GPU acceleration for instant results on large codebases.
 </p>
 
-<h2>Key Features</h2>
+<h3>Real-Time Detection</h3>
 <ul>
-  <li><b>Real-Time Detection</b> — Finds vulnerabilities as you type, not at build time</li>
-  <li><b>GPU-Accelerated</b> — Massively parallel scanning engine for instant results on large codebases</li>
-  <li><b>OWASP Top 10 &amp; CWE Top 25</b> — Comprehensive coverage of critical vulnerability classes</li>
-  <li><b>One-Click Auto-Fix</b> — Automated remediation suggestions with instant apply</li>
-  <li><b>Security Dashboard</b> — Project-wide vulnerability metrics with severity breakdown</li>
-  <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, Swift, and C/C++</li>
+  <li><b>As-You-Type Scanning</b> — Vulnerabilities highlighted inline in the editor with severity levels</li>
+  <li><b>OWASP Top 10 Coverage</b> — Injection, broken access control, cryptographic failures, SSRF, and more</li>
+  <li><b>CWE Top 25 Coverage</b> — SQL injection, XSS, OS command injection, and 22+ more (Pro)</li>
+  <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, C/C++, and Swift</li>
 </ul>
 
-<h2>Why VulnSpeed?</h2>
-<p>
-  Traditional SAST tools are slow and disruptive. VulnSpeed's GPU-accelerated engine delivers the same
-  coverage in a fraction of the time — making security scanning a seamless part of your development flow
-  instead of a CI/CD bottleneck.
-</p>
-
-<h2>Free vs Pro</h2>
+<h3>Remediation</h3>
 <ul>
-  <li><b>Free:</b> Basic vulnerability scanning, OWASP Top 10 detection, inline warnings, auto-fix for common patterns</li>
-  <li><b>Pro:</b> Full CWE Top 25 coverage, GPU acceleration, advanced taint analysis, custom security rules, compliance reports (SOC 2, HIPAA, PCI DSS), CI/CD integration, and team security dashboards</li>
+  <li><b>One-Click Auto-Fix</b> — Alt+Enter to apply automated remediation suggestions instantly</li>
+  <li><b>File Scanning</b> — Right-click in editor to scan the current file on demand</li>
+  <li><b>Project Scanning</b> — Right-click a folder to scan the entire project with severity breakdown</li>
+  <li><b>Security Dashboard</b> — Tool window with vulnerability list, statistics, and quick access to fixes</li>
 </ul>
-]]></description>
+
+<h3>Advanced Analysis (Pro)</h3>
+<ul>
+  <li><b>GPU Acceleration</b> — Metal/CUDA/Vulkan accelerated engine, 50-100x faster than CPU scanning</li>
+  <li><b>Taint Analysis</b> — Advanced data flow tracking across function boundaries</li>
+  <li><b>AI False Positive Filtering</b> — ML-based filtering to reduce noise</li>
+  <li><b>Custom Security Rules</b> — Define organization-specific vulnerability patterns</li>
+  <li><b>Compliance Reports</b> — Generate SOC 2, HIPAA, and PCI DSS reports</li>
+  <li><b>CI/CD Integration</b> — Run VulnSpeed in your pipeline for gated security checks</li>
+</ul>
+
+<h3>Pricing</h3>
+<ul>
+  <li><b>Free:</b> Real-time OWASP Top 10 detection, inline warnings, basic auto-fix, file/project scanning</li>
+  <li><b>Pro:</b> Full CWE Top 25, GPU acceleration, taint analysis, custom rules, compliance reports, CI/CD integration</li>
+</ul>
+
+<h3>Requirements</h3>
+<ul>
+  <li>IntelliJ IDEA 2023.3+ (or any JetBrains IDE)</li>
+  <li>JDK 11+</li>
+  <li>2 GB free RAM</li>
+  <li>GPU optional (Metal, CUDA, or Vulkan for Pro acceleration)</li>
+</ul>
+
+<h3>Support</h3>
+<ul>
+  <li><a href="https://github.com/JirakJ/vulnspeed-plugin/issues">Issue Tracker</a></li>
+  <li><a href="https://github.com/JirakJ/vulnspeed-plugin">Documentation</a></li>
+</ul>
+    ]]></description>
 
     <change-notes><![CDATA[
-        <h4>Release 2026.2.1</h4>
+        <h3>What's New</h3>
         <ul>
-            <li>Modernized build system to IntelliJ Platform Gradle Plugin 2.x</li>
-            <li>Consolidated to single-module project</li>
+            <li><b>Real-Time Vulnerability Detection</b> - Finds OWASP Top 10 and CWE Top 25 vulnerabilities as you type with inline severity highlighting</li>
+            <li><b>Multi-Language Support</b> - Full scanning for Java, Python, JavaScript, TypeScript, C/C++, and Swift</li>
+            <li><b>One-Click Auto-Fix</b> - Automated remediation suggestions applied instantly via Alt+Enter</li>
+            <li><b>File and Project Scanning</b> - On-demand scanning of individual files or entire projects with results in the VulnSpeed tool window</li>
+            <li><b>Security Dashboard</b> - Bottom panel displaying vulnerability list, statistics, severity breakdown, and quick access to fixes</li>
+            <li><b>GPU-Accelerated Scanning</b> - Metal, CUDA, and Vulkan accelerated engine for 50-100x faster analysis on large codebases (Pro)</li>
+            <li><b>Advanced Taint Analysis</b> - Data flow and taint tracking to trace vulnerability propagation paths (Pro)</li>
+            <li><b>AI False Positive Filtering</b> - Machine learning based filtering to reduce noise and surface real vulnerabilities (Pro)</li>
+            <li><b>Compliance Reports</b> - Generate SOC 2, HIPAA, and PCI DSS compliance reports from scan results (Pro)</li>
+            <li><b>Custom Security Rules</b> - Define organization-specific vulnerability patterns and detection rules (Pro)</li>
         </ul>
     ]]></change-notes>
 
