@@ -4,8 +4,7 @@
     <name>VulnSpeed - GPU-Accelerated SAST</name>
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
-    <description><![CDATA[
-<h2>VulnSpeed — GPU-Accelerated SAST for Real-Time Vulnerability Detection</h2>
+    <description><![CDATA[<h2>VulnSpeed — GPU-Accelerated SAST for Real-Time Vulnerability Detection</h2>
 
 <p>
   Security scanning at the speed of thought. VulnSpeed detects OWASP Top 10 and CWE Top 25
@@ -17,7 +16,7 @@
 <ul>
   <li><b>As-You-Type Scanning</b> — Vulnerabilities highlighted inline in the editor with severity levels</li>
   <li><b>OWASP Top 10 Coverage</b> — Injection, broken access control, cryptographic failures, SSRF, and more</li>
-  <li><b>CWE Top 25 Coverage</b> — SQL injection, XSS, OS command injection, and 22+ more (Pro)</li>
+  <li><b>CWE Top 25 Coverage</b> — SQL injection, XSS, OS command injection, and 22+ more</li>
   <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, C/C++, and Swift</li>
 </ul>
 
@@ -29,7 +28,7 @@
   <li><b>Security Dashboard</b> — Tool window with vulnerability list, statistics, and quick access to fixes</li>
 </ul>
 
-<h3>Advanced Analysis (Pro)</h3>
+<h3>Advanced Analysis</h3>
 <ul>
   <li><b>GPU Acceleration</b> — Metal/CUDA/Vulkan accelerated engine, 50-100x faster than CPU scanning</li>
   <li><b>Taint Analysis</b> — Advanced data flow tracking across function boundaries</li>
@@ -37,12 +36,6 @@
   <li><b>Custom Security Rules</b> — Define organization-specific vulnerability patterns</li>
   <li><b>Compliance Reports</b> — Generate SOC 2, HIPAA, and PCI DSS reports</li>
   <li><b>CI/CD Integration</b> — Run VulnSpeed in your pipeline for gated security checks</li>
-</ul>
-
-<h3>Pricing</h3>
-<ul>
-  <li><b>Free:</b> Real-time OWASP Top 10 detection, inline warnings, basic auto-fix, file/project scanning</li>
-  <li><b>Pro:</b> Full CWE Top 25, GPU acceleration, taint analysis, custom rules, compliance reports, CI/CD integration</li>
 </ul>
 
 <h3>Requirements</h3>
@@ -57,8 +50,7 @@
 <ul>
   <li><a href="https://github.com/JirakJ/vulnspeed-plugin/issues">Issue Tracker</a></li>
   <li><a href="https://github.com/JirakJ/vulnspeed-plugin">Documentation</a></li>
-</ul>
-    ]]></description>
+</ul>]]></description>
 
     <change-notes><![CDATA[
         <h3>What's New</h3>
@@ -142,6 +134,9 @@
 
         <applicationService
             serviceImplementation="com.jakubjirak.vulnspeed.core.VulnSpeedEngine"/>
+    
+        <notificationGroup id="VulnSpeed Feedback" displayType="BALLOON"/>
+        <projectActivity implementation="com.jakubjirak.vulnspeed.feedback.FeedbackNotifier"/>
     </extensions>
 
     <actions>
