@@ -1,6 +1,5 @@
 <idea-plugin>
     <id>com.jakubjirak.vulnspeed</id>
-    <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260215" release-version="20262" optional="true"/>
     <name>VulnSpeed - GPU-Accelerated SAST</name>
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
@@ -60,11 +59,11 @@
             <li><b>One-Click Auto-Fix</b> - Automated remediation suggestions applied instantly via Alt+Enter</li>
             <li><b>File and Project Scanning</b> - On-demand scanning of individual files or entire projects with results in the VulnSpeed tool window</li>
             <li><b>Security Dashboard</b> - Bottom panel displaying vulnerability list, statistics, severity breakdown, and quick access to fixes</li>
-            <li><b>GPU-Accelerated Scanning</b> - Metal, CUDA, and Vulkan accelerated engine for 50-100x faster analysis on large codebases (Pro)</li>
-            <li><b>Advanced Taint Analysis</b> - Data flow and taint tracking to trace vulnerability propagation paths (Pro)</li>
-            <li><b>AI False Positive Filtering</b> - Machine learning based filtering to reduce noise and surface real vulnerabilities (Pro)</li>
-            <li><b>Compliance Reports</b> - Generate SOC 2, HIPAA, and PCI DSS compliance reports from scan results (Pro)</li>
-            <li><b>Custom Security Rules</b> - Define organization-specific vulnerability patterns and detection rules (Pro)</li>
+            <li><b>GPU-Accelerated Scanning</b> - Metal, CUDA, and Vulkan accelerated engine for 50-100x faster analysis on large codebases</li>
+            <li><b>Advanced Taint Analysis</b> - Data flow and taint tracking to trace vulnerability propagation paths</li>
+            <li><b>AI False Positive Filtering</b> - Machine learning based filtering to reduce noise and surface real vulnerabilities</li>
+            <li><b>Compliance Reports</b> - Generate SOC 2, HIPAA, and PCI DSS compliance reports from scan results</li>
+            <li><b>Custom Security Rules</b> - Define organization-specific vulnerability patterns and detection rules</li>
         </ul>
     ]]></change-notes>
 
@@ -122,17 +121,6 @@
             id="com.jakubjirak.vulnspeed"/>
 
         <applicationService
-            serviceImplementation="com.jakubjirak.vulnspeed.licensing.LicenseManager"/>
-
-        <applicationService
-            serviceImplementation="com.jakubjirak.vulnspeed.licensing.SubscriptionManager"/>
-
-        <notificationGroup
-            id="VulnSpeed Notifications"
-            displayType="BALLOON"
-            isLogByDefault="true"/>
-
-        <applicationService
             serviceImplementation="com.jakubjirak.vulnspeed.core.VulnSpeedEngine"/>
     
         <notificationGroup id="VulnSpeed Feedback" displayType="BALLOON"/>
@@ -140,30 +128,6 @@
     </extensions>
 
     <actions>
-        <action
-            id="VulnSpeed.ActivateLicense"
-            class="com.jakubjirak.vulnspeed.actions.ActivateLicenseAction"
-            text="Activate License"
-            description="Activate your VulnSpeed Professional or Enterprise license"/>
-
-        <action
-            id="VulnSpeed.StartTrial"
-            class="com.jakubjirak.vulnspeed.actions.StartTrialAction"
-            text="Start Free Trial"
-            description="Start 14-day free trial of Professional tier"/>
-
-        <action
-            id="VulnSpeed.ManageSubscription"
-            class="com.jakubjirak.vulnspeed.actions.ManageSubscriptionAction"
-            text="Manage Subscription"
-            description="Open JetBrains Store to manage your subscription"/>
-
-        <action
-            id="VulnSpeed.LicenseSettings"
-            class="com.jakubjirak.vulnspeed.actions.LicenseSettingsAction"
-            text="License Settings"
-            description="View and manage your license information"/>
-
         <action
             id="VulnSpeed.ScanFile"
             class="com.jakubjirak.vulnspeed.actions.ScanFileAction"
@@ -183,12 +147,6 @@
         <group id="VulnSpeed.MainGroup" popup="true" text="VulnSpeed" description="VulnSpeed Security Analysis">
             <reference ref="VulnSpeed.ScanFile"/>
             <reference ref="VulnSpeed.ScanProject"/>
-            <separator/>
-            <reference ref="VulnSpeed.ActivateLicense"/>
-            <reference ref="VulnSpeed.StartTrial"/>
-            <separator/>
-            <reference ref="VulnSpeed.ManageSubscription"/>
-            <reference ref="VulnSpeed.LicenseSettings"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
     </actions>

@@ -18,26 +18,7 @@ import kotlin.math.min
 class VulnSpeedEngine : AutoCloseable {
     private val scanResults = ConcurrentHashMap<String, ScanResult>()
     private val executorService = ForkJoinPool.commonPool()
-    private var license: PluginLicense? = null
     private val patternRules = loadDefaultRules()
-    
-    init {
-        loadLicense()
-    }
-    
-    fun getLicense(): PluginLicense? = license
-    
-    fun setLicense(newLicense: PluginLicense) {
-        this.license = newLicense
-    }
-    
-    fun canUseGPU(): Boolean {
-        return license?.features?.gpuAcceleration == true
-    }
-    
-    fun getMaxLocPerScan(): Long {
-        return license?.features?.maxLocPerScan ?: 100_000
-    }
     
     fun scanFile(file: VirtualFile, project: Project): ScanResult {
         val scanId = UUID.randomUUID().toString()
@@ -51,30 +32,17 @@ class VulnSpeedEngine : AutoCloseable {
                 timestamp = System.currentTimeMillis(),
                 durationMs = System.currentTimeMillis() - startTime,
                 vulnerabilities = emptyList(),
-                stats = ScanStats(0, 0, 0, 0, 0, 0, 0),
-                tier = license?.tier ?: SubscriptionTier.FREE
+                stats = ScanStats(0, 0, 0, 0, 0, 0, 0)
             )
         }
         
         val linesOfCode = content.lines().size.toLong()
         
-        // Check LOC limit
-        if (linesOfCode > getMaxLocPerScan()) {
-            return ScanResult(
-                scanId = scanId,
-                timestamp = System.currentTimeMillis(),
-                durationMs = System.currentTimeMillis() - startTime,
-                vulnerabilities = emptyList(),
-                stats = ScanStats(0, 0, 0, 0, 0, 0, linesOfCode),
-                tier = license?.tier ?: SubscriptionTier.FREE
-            )
-        }
-        
         val vulnerabilities = mutableListOf<Vulnerability>()
         val language = detectLanguage(file)
         
         // Run pattern matching
-        for (rule in patternRules.filter { it.enabled && (!it.isPremium || license?.tier != SubscriptionTier.FREE) }) {
+        for (rule in patternRules.filter { it.enabled }) {
             vulnerabilities.addAll(
                 scanWithRule(content, file.path, rule, language)
             )
@@ -97,8 +65,7 @@ class VulnSpeedEngine : AutoCloseable {
                 lowCount = vulnerabilities.count { it.severity == Severity.LOW },
                 filesScanned = 1,
                 linesOfCode = linesOfCode
-            ),
-            tier = license?.tier ?: SubscriptionTier.FREE
+            )
         )
         
         scanResults[scanId] = result
@@ -147,7 +114,6 @@ class VulnSpeedEngine : AutoCloseable {
                 filesScanned = filesScanned,
                 linesOfCode = totalLoc
             ),
-            tier = license?.tier ?: SubscriptionTier.FREE
         )
         
         scanResults[scanId] = result
@@ -603,13 +569,9 @@ class VulnSpeedEngine : AutoCloseable {
         return ext in listOf("java", "kt", "py", "js", "ts", "swift", "cpp", "c", "h", "go", "rs")
     }
     
-    private fun loadLicense() {
-        // TODO: Load from persistent storage
-    }
     
     private fun loadDefaultRules(): List<Rule> {
         return listOf(
-            // FREE TIER RULES
             Rule(
                 id = "SQL_001",
                 name = "SQL Injection via String Concatenation",
@@ -618,7 +580,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """(SELECT|INSERT|UPDATE|DELETE).*['"\s]+\+\s*\w+""",
-                isPremium = false
             ),
             Rule(
                 id = "XSS_001",
@@ -628,7 +589,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 79,
                 owasp = "A03:2021 - Injection",
                 pattern = """\.innerHTML\s*=\s*[\w\s]+""",
-                isPremium = false
             ),
             Rule(
                 id = "AUTH_001",
@@ -638,7 +598,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(password|api_key|secret|token)\s*=\s*['"]\S+['"]\s*""",
-                isPremium = false
             ),
             Rule(
                 id = "CRYPTO_BASIC_001",
@@ -648,10 +607,8 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 330,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(Math\.random|new Random)\(""",
-                isPremium = false
             ),
             
-            // PREMIUM TIER RULES
             Rule(
                 id = "CRYPTO_001",
                 name = "Weak Cryptographic Algorithm - MD5/SHA1",
@@ -660,7 +617,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 327,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(MessageDigest\.getInstance\(["'](MD5|SHA-?1)["']\)|hashlib\.(md5|sha1)\()""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_002",
@@ -670,7 +626,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 327,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(Cipher\.getInstance\(["'](DES|3DES|DESede|RC4|ARC4))|AES/ECB""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_003",
@@ -680,7 +635,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 321,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(SecretKeySpec|IvParameterSpec)\(.*['"]\w{16,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_004",
@@ -690,7 +644,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 326,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(SSLv3|TLSv1\.0|TLSv1\.1|PROTOCOL_TLS|PROTOCOL_SSLv3)""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_005",
@@ -700,7 +653,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 295,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(setHostnameVerifier.*ALLOW_ALL|X509TrustManager.*checkServerTrusted.*\{\s*\})""",
-                isPremium = true
             ),
             Rule(
                 id = "PATH_001",
@@ -710,7 +662,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 22,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(File|Path|Paths\.get)\([^)]*[\+&]\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "PATH_002",
@@ -720,7 +671,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 22,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """ZipEntry.*getName\(\).*File\(""",
-                isPremium = true
             ),
             Rule(
                 id = "CMD_001",
@@ -730,7 +680,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 78,
                 owasp = "A03:2021 - Injection",
                 pattern = """Runtime\.getRuntime\(\)\.exec\(\s*[\w\s]+\+""",
-                isPremium = true
             ),
             Rule(
                 id = "CMD_002",
@@ -740,7 +689,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 78,
                 owasp = "A03:2021 - Injection",
                 pattern = """ProcessBuilder.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "CMD_003",
@@ -750,7 +698,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 78,
                 owasp = "A03:2021 - Injection",
                 pattern = """(subprocess\.(call|run|Popen)|os\.(system|popen)).*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "DESER_001",
@@ -760,7 +707,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """ObjectInputStream.*readObject\(\)""",
-                isPremium = true
             ),
             Rule(
                 id = "DESER_002",
@@ -770,7 +716,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """yaml\.load\([^,)]*\)""",
-                isPremium = true
             ),
             Rule(
                 id = "XXE_001",
@@ -780,7 +725,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 611,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """(DocumentBuilderFactory|SAXParserFactory)\.newInstance\(\)(?!.*setFeature)""",
-                isPremium = true
             ),
             Rule(
                 id = "LDAP_001",
@@ -790,7 +734,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 90,
                 owasp = "A03:2021 - Injection",
                 pattern = """(search|lookup)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "XPATH_001",
@@ -800,7 +743,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 643,
                 owasp = "A03:2021 - Injection",
                 pattern = """(XPath|compile).*evaluate\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "SSRF_001",
@@ -810,7 +752,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 918,
                 owasp = "A10:2021 - Server-Side Request Forgery",
                 pattern = """(URL|URI|HttpClient|requests\.get)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "IDOR_001",
@@ -820,7 +761,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 639,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(findById|getById|getUserById)\(\s*request\.getParameter""",
-                isPremium = true
             ),
             Rule(
                 id = "CSRF_001",
@@ -830,7 +770,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 352,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """@(PostMapping|RequestMapping).*method\s*=\s*RequestMethod\.POST(?!.*csrf)""",
-                isPremium = true
             ),
             Rule(
                 id = "LOG_001",
@@ -840,7 +779,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 117,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """(log\.(info|debug|warn|error)|logger\.(info|debug|warn|error))\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "REDIRECT_001",
@@ -850,7 +788,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 601,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(redirect|sendRedirect|location\.href)\s*=\s*[\w\s]+\+""",
-                isPremium = true
             ),
             Rule(
                 id = "REGEX_001",
@@ -860,7 +797,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1333,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """\(.*\+.*\)\+|\(.*\*.*\)\*""",
-                isPremium = true
             ),
             Rule(
                 id = "RACE_001",
@@ -870,7 +806,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 367,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(File\.exists|isFile|isDirectory)\(\).*\n.*new FileOutputStream""",
-                isPremium = true
             ),
             Rule(
                 id = "TEMP_001",
@@ -880,7 +815,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 377,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """File\.createTempFile\(['"]\w+['"],\s*null\)""",
-                isPremium = true
             ),
             Rule(
                 id = "SQL_002",
@@ -890,7 +824,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """createNativeQuery\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "SQL_003",
@@ -900,7 +833,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 943,
                 owasp = "A03:2021 - Injection",
                 pattern = """(find|findOne)\(.*\${'$'}where.*\+""",
-                isPremium = true
             ),
             Rule(
                 id = "XSS_002",
@@ -910,7 +842,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 79,
                 owasp = "A03:2021 - Injection",
                 pattern = """document\.write\(.*(?:location|window\.location|document\.URL)""",
-                isPremium = true
             ),
             Rule(
                 id = "XSS_003",
@@ -920,7 +851,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 79,
                 owasp = "A03:2021 - Injection",
                 pattern = """dangerouslySetInnerHTML=\{\{__html:\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "JWT_001",
@@ -930,7 +860,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 347,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(algorithm.*["']none["']|\.setSigningKey\(["']\w{1,16}["']\))""",
-                isPremium = true
             ),
             Rule(
                 id = "COOKIE_001",
@@ -940,7 +869,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 614,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """Cookie\(.*\)(?!.*setSecure|.*setHttpOnly)""",
-                isPremium = true
             ),
             Rule(
                 id = "CORS_001",
@@ -950,7 +878,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 942,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """Access-Control-Allow-Origin.*\*""",
-                isPremium = true
             ),
             Rule(
                 id = "MASS_ASSIGN_001",
@@ -960,7 +887,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 915,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@RequestBody.*(?!@Valid|@Validated).*User""",
-                isPremium = true
             ),
             
             // ADDITIONAL PREMIUM RULES - Java/Kotlin Specific
@@ -972,7 +898,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 470,
                 owasp = "A03:2021 - Injection",
                 pattern = """(Class\.forName|\.newInstance|\.invoke)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "SCRIPT_001",
@@ -982,7 +907,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 94,
                 owasp = "A03:2021 - Injection",
                 pattern = """(ScriptEngine|eval|ScriptEngineManager).*\.eval\(.*\+""",
-                isPremium = true
             ),
             Rule(
                 id = "EXPR_001",
@@ -992,7 +916,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 917,
                 owasp = "A03:2021 - Injection",
                 pattern = """(ExpressionParser|OgnlContext|getValue)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "THREAD_001",
@@ -1002,7 +925,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 572,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """new Thread\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "CLASSLOAD_001",
@@ -1012,7 +934,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 470,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """(URLClassLoader|ClassLoader\.loadClass)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             
             // Memory & Resource Management
@@ -1024,7 +945,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 404,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(FileInputStream|FileOutputStream|Connection|Statement|ResultSet)\s+\w+\s*=.*(?!try-with-resources)""",
-                isPremium = true
             ),
             Rule(
                 id = "NULL_001",
@@ -1034,7 +954,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 476,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(\.get\(\w+\)|\.orElse|Optional)\s*\.\w+(?!\.isPresent|\.isEmpty)""",
-                isPremium = true
             ),
             Rule(
                 id = "BUFFER_001",
@@ -1044,7 +963,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 120,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(byte\[\d+\]|char\[\d+\]).*\.read\(""",
-                isPremium = true
             ),
             
             // Input Validation
@@ -1056,7 +974,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """@(RequestParam|PathVariable).*String\s+\w+\)(?!.*@Valid|.*@Pattern)""",
-                isPremium = true
             ),
             Rule(
                 id = "SIZE_001",
@@ -1066,7 +983,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(MultipartFile|InputStream).*(?!@Size|@Max|maxFileSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "RATE_001",
@@ -1076,7 +992,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@(PostMapping|PutMapping|DeleteMapping)(?!.*@RateLimit|.*@Throttle)""",
-                isPremium = true
             ),
             
             // Authentication & Authorization
@@ -1088,7 +1003,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 256,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(setPassword|savePassword)\(.*(?!BCrypt|Argon2|PBKDF2|SCrypt)""",
-                isPremium = true
             ),
             Rule(
                 id = "AUTH_003",
@@ -1098,7 +1012,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@(PostMapping|PutMapping|DeleteMapping).*(?!@PreAuthorize|@Secured|@RolesAllowed)""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_001",
@@ -1108,7 +1021,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(session|sessionId|JSESSIONID).*\+\s*(url|redirect|log)""",
-                isPremium = true
             ),
             Rule(
                 id = "TOKEN_001",
@@ -1118,7 +1030,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 330,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(token|sessionId|nonce)\s*=.*(Math\.random|Random\(\)|UUID\.randomUUID)""",
-                isPremium = true
             ),
             
             // API Security
@@ -1130,7 +1041,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@GetMapping.*@RequestParam.*(password|secret|token|key)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_002",
@@ -1140,7 +1050,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """@(PostMapping|PutMapping)(?!.*consumes\s*=)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_003",
@@ -1150,7 +1059,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 209,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(printStackTrace|\.getMessage|\.toString)\(\).*response""",
-                isPremium = true
             ),
             
             // Database Security
@@ -1162,7 +1070,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """(SELECT|FROM|UPDATE|DELETE).*\+\s*(tableName|columnName)""",
-                isPremium = true
             ),
             Rule(
                 id = "DB_002",
@@ -1172,7 +1079,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1050,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@OneToMany.*fetch\s*=\s*FetchType\.LAZY(?!.*@BatchSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "DB_003",
@@ -1182,7 +1088,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 404,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """DriverManager\.getConnection.*(?!DataSource|HikariCP|c3p0)""",
-                isPremium = true
             ),
             
             // Cloud & Container Security
@@ -1194,7 +1099,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(AKIA[0-9A-Z]{16}|aws_access_key_id|AWS_SECRET_ACCESS_KEY)""",
-                isPremium = true
             ),
             Rule(
                 id = "CLOUD_002",
@@ -1204,7 +1108,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 732,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(\.withCannedAcl\(CannedAccessControlList\.PublicRead|s3:.*\*)""",
-                isPremium = true
             ),
             Rule(
                 id = "DOCKER_001",
@@ -1214,7 +1117,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 250,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(FROM.*:latest|USER root|EXPOSE (22|23|3389))""",
-                isPremium = true
             ),
             
             // Concurrency Issues
@@ -1226,7 +1128,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 609,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """if\s*\(\s*\w+\s*==\s*null\s*\).*synchronized.*if\s*\(\s*\w+\s*==\s*null""",
-                isPremium = true
             ),
             Rule(
                 id = "SYNC_001",
@@ -1236,7 +1137,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 662,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """synchronized\s*\(\s*this\.\w+(?!.*final)""",
-                isPremium = true
             ),
             
             // Modern Java Features (Java 21+)
@@ -1248,7 +1148,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 374,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """record\s+\w+\([^)]*(?:List|Map|Set|Array)(?!.*unmodifiable)""",
-                isPremium = true
             ),
             Rule(
                 id = "VIRTUAL_001",
@@ -1258,7 +1157,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 821,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """Thread\.ofVirtual.*synchronized\s*\(""",
-                isPremium = true
             ),
             Rule(
                 id = "PATTERN_001",
@@ -1268,7 +1166,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 843,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(instanceof\s+\w+\s+\w+).*(?!if|&&|\|\|)""",
-                isPremium = true
             ),
             
             // Kotlin Specific
@@ -1280,7 +1177,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 476,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(fun|val)\s+\w+.*=.*\.let\s*\{.*!!\s*\}""",
-                isPremium = true
             ),
             Rule(
                 id = "KOTLIN_002",
@@ -1290,7 +1186,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 665,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """lateinit\s+var\s+\w+.*(?!::.*\.isInitialized)""",
-                isPremium = true
             ),
             Rule(
                 id = "KOTLIN_003",
@@ -1300,7 +1195,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 374,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """data class.*\((.*Mutable(List|Set|Map)|var\s+(list|set|map))""",
-                isPremium = true
             ),
             
             // Spring Security & Framework Specific (10 rules)
@@ -1312,7 +1206,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(permitAll\(\)|authorizeRequests.*anyRequest.*permitAll)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_002",
@@ -1322,7 +1215,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 352,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """csrf\(\)\.disable\(\)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_003",
@@ -1332,7 +1224,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """management\.endpoints\.web\.exposure\.include=\*""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_004",
@@ -1342,7 +1233,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """jdbcTemplate\.(query|update)\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_005",
@@ -1352,7 +1242,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(spring\.datasource\.(password|username)|spring\.security\.user\.password)\s*=\s*\S+""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_006",
@@ -1362,7 +1251,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 662,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(save|update|delete)\(.*\)(?!.*@Transactional)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_007",
@@ -1372,7 +1260,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 285,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """@EnableOAuth2Client(?!.*hasAuthority|.*hasRole)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_008",
@@ -1382,7 +1269,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """@RequestBody(?!.*@Valid|.*@Validated)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_009",
@@ -1392,7 +1278,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 215,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(logging\.level\.root|debug)\s*=\s*(DEBUG|TRACE)""",
-                isPremium = true
             ),
             Rule(
                 id = "SPRING_010",
@@ -1402,7 +1287,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 917,
                 owasp = "A03:2021 - Injection",
                 pattern = """@Value\(.*\$\{.*\+""",
-                isPremium = true
             ),
             
             // REST API & GraphQL Security (8 rules)
@@ -1414,7 +1298,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@GetMapping.*findAll\(\)(?!.*Pageable)""",
-                isPremium = true
             ),
             Rule(
                 id = "REST_002",
@@ -1424,7 +1307,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 352,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """X-HTTP-Method-Override""",
-                isPremium = true
             ),
             Rule(
                 id = "REST_003",
@@ -1434,7 +1316,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1059,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@RequestMapping\((?!.*version|.*/v\d+)""",
-                isPremium = true
             ),
             Rule(
                 id = "REST_004",
@@ -1444,7 +1325,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@PathVariable.*(password|secret|token|ssn|credit)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_001",
@@ -1454,7 +1334,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@GraphQL(?!.*maxQueryDepth|.*complexity)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_002",
@@ -1464,7 +1343,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 215,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """graphql\.introspection\.enabled\s*=\s*true""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_003",
@@ -1474,7 +1352,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@Mutation(?!.*@Throttle|.*maxBatchSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "WEBSOCKET_001",
@@ -1484,7 +1361,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@MessageMapping(?!.*@PreAuthorize|.*Principal)""",
-                isPremium = true
             ),
             
             // Microservices & Distributed Systems (7 rules)
@@ -1496,7 +1372,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 755,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """RestTemplate\.(get|post|put|delete)(?!.*@CircuitBreaker|.*@HystrixCommand)""",
-                isPremium = true
             ),
             Rule(
                 id = "MICRO_002",
@@ -1506,7 +1381,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 287,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@FeignClient(?!.*configuration.*ssl)""",
-                isPremium = true
             ),
             Rule(
                 id = "MICRO_003",
@@ -1516,7 +1390,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 532,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """log\.(info|debug).*request\.getBody|response\.getBody""",
-                isPremium = true
             ),
             Rule(
                 id = "MICRO_004",
@@ -1526,7 +1399,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(RestTemplate|WebClient|HttpClient).*(?!timeout|connectTimeout)""",
-                isPremium = true
             ),
             Rule(
                 id = "KAFKA_001",
@@ -1536,7 +1408,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@KafkaListener(?!.*sasl|.*security\.protocol)""",
-                isPremium = true
             ),
             Rule(
                 id = "REDIS_001",
@@ -1546,7 +1417,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(spring\.redis\.host|jedis\.host)(?!.*password)""",
-                isPremium = true
             ),
             Rule(
                 id = "RABBIT_001",
@@ -1556,7 +1426,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """spring\.rabbitmq\.host(?!.*ssl|.*port=5671)""",
-                isPremium = true
             ),
             
             // Mobile & Frontend Security (6 rules)
@@ -1568,7 +1437,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(apiKey|api_key|API_KEY)\s*=\s*["']\w{20,}["']""",
-                isPremium = true
             ),
             Rule(
                 id = "MOBILE_002",
@@ -1578,7 +1446,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 312,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(SharedPreferences|UserDefaults)\.(set|put).*(password|token|secret)""",
-                isPremium = true
             ),
             Rule(
                 id = "MOBILE_003",
@@ -1588,7 +1455,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 295,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """URLSession(?!.*pinnedCertificates|.*publicKeys)""",
-                isPremium = true
             ),
             Rule(
                 id = "WEB_001",
@@ -1598,7 +1464,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 693,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """<head>(?!.*Content-Security-Policy)""",
-                isPremium = true
             ),
             Rule(
                 id = "WEB_002",
@@ -1608,7 +1473,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 353,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """<script.*src=["']https?://(?!.*integrity=)""",
-                isPremium = true
             ),
             Rule(
                 id = "WEB_003",
@@ -1618,7 +1482,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 522,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """<input.*(password|credit|cvv)(?!.*autocomplete=["']off["'])""",
-                isPremium = true
             ),
             
             // DevOps & CI/CD Security (5 rules)
@@ -1630,7 +1493,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(-----BEGIN (RSA|DSA|EC) PRIVATE KEY-----|password.*=.*['"]\w+['"])""",
-                isPremium = true
             ),
             Rule(
                 id = "CICD_002",
@@ -1640,7 +1502,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1104,
                 owasp = "A06:2021 - Vulnerable and Outdated Components",
                 pattern = """FROM (debian:7|ubuntu:14|centos:6|alpine:3.[0-5])""",
-                isPremium = true
             ),
             Rule(
                 id = "CICD_003",
@@ -1650,7 +1511,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 250,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """--privileged|privileged:\s*true""",
-                isPremium = true
             ),
             Rule(
                 id = "K8S_001",
@@ -1660,7 +1520,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 250,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """kind:\s*Pod(?!.*securityContext|.*runAsNonRoot)""",
-                isPremium = true
             ),
             Rule(
                 id = "K8S_002",
@@ -1670,7 +1529,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 312,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """kind:\s*ConfigMap.*data:.*password""",
-                isPremium = true
             ),
             
             // Python Specific (5 rules)
@@ -1682,7 +1540,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """pickle\.(loads|load)\(""",
-                isPremium = true
             ),
             Rule(
                 id = "PYTHON_002",
@@ -1692,7 +1549,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 94,
                 owasp = "A03:2021 - Injection",
                 pattern = """eval\(.*input|eval\(.*request""",
-                isPremium = true
             ),
             Rule(
                 id = "PYTHON_003",
@@ -1702,7 +1558,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 215,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """app\.run\(.*debug\s*=\s*True""",
-                isPremium = true
             ),
             Rule(
                 id = "PYTHON_004",
@@ -1712,7 +1567,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """SECRET_KEY\s*=\s*['"][^'"]{20,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "PYTHON_005",
@@ -1722,7 +1576,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """(session\.execute|text)\(.*[%f]\s*%""",
-                isPremium = true
             ),
             
             // JavaScript/TypeScript Advanced (6 rules)
@@ -1734,7 +1587,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1321,
                 owasp = "A03:2021 - Injection",
                 pattern = """(Object\.assign|.*__proto__|.*constructor\.prototype)""",
-                isPremium = true
             ),
             Rule(
                 id = "JS_002",
@@ -1744,7 +1596,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 330,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(token|key|nonce|salt).*Math\.random\(\)""",
-                isPremium = true
             ),
             Rule(
                 id = "JS_003",
@@ -1754,7 +1605,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 78,
                 owasp = "A03:2021 - Injection",
                 pattern = """(exec|spawn)\(.*\+.*\)""",
-                isPremium = true
             ),
             Rule(
                 id = "TS_001",
@@ -1764,7 +1614,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 843,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """:\s*any(?!.*@ts-expect-error)""",
-                isPremium = true
             ),
             Rule(
                 id = "NODE_001",
@@ -1774,7 +1623,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 693,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """express\(\)(?!.*helmet\(\))""",
-                isPremium = true
             ),
             Rule(
                 id = "NODE_002",
@@ -1784,7 +1632,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 943,
                 owasp = "A03:2021 - Injection",
                 pattern = """find\(req\.(body|query|params)\)""",
-                isPremium = true
             ),
             
             // Advanced Attack Vectors (10 rules)
@@ -1796,7 +1643,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 94,
                 owasp = "A03:2021 - Injection",
                 pattern = """(render|renderTemplate|compile)\(.*\+\s*\w+|Template.*\+""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_002",
@@ -1806,7 +1652,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 113,
                 owasp = "A03:2021 - Injection",
                 pattern = """(setHeader|addHeader)\(.*\+\s*\w+.*\\r\\n""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_003",
@@ -1816,7 +1661,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 601,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(setHeader\(["']Location["']|\.location)\s*.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_004",
@@ -1826,7 +1670,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 776,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """DocumentBuilder(?!.*FEATURE_SECURE_PROCESSING|.*setEntityExpansionLimit)""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_005",
@@ -1836,7 +1679,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 409,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """ZipInputStream.*(?!.*getCompressedSize|.*ratio)""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_006",
@@ -1846,7 +1688,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 90,
                 owasp = "A03:2021 - Injection",
                 pattern = """(\\(.*\+.*\\)|LdapName.*\+)""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_007",
@@ -1856,7 +1697,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1236,
                 owasp = "A03:2021 - Injection",
                 pattern = """(csvWriter|writeNext|addCell).*(?!.*startsWith\(["'][=+@-])""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_008",
@@ -1866,7 +1706,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 434,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(MultipartFile|@RequestParam.*file)(?!.*getContentType|.*getMimeType)""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_009",
@@ -1876,7 +1715,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 22,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(sendFile|writeFile|download).*\+\s*\w+(?!.*checkAccess|.*authorize)""",
-                isPremium = true
             ),
             Rule(
                 id = "ATTACK_010",
@@ -1886,7 +1724,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """while.*\.(add|put)\((?!.*size\(\)\s*[<>]|.*MAX_SIZE)""",
-                isPremium = true
             ),
             
             // Data Privacy & Compliance (8 rules)
@@ -1898,7 +1735,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 311,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(email|ssn|credit|passport).*save\((?!.*encrypt|.*cipher)""",
-                isPremium = true
             ),
             Rule(
                 id = "GDPR_002",
@@ -1908,7 +1744,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 778,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """(delete|update).*User(?!.*log\.|.*audit)""",
-                isPremium = true
             ),
             Rule(
                 id = "GDPR_003",
@@ -1918,7 +1753,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 532,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """log\.(info|debug|warn).*(email|ssn|password|credit)""",
-                isPremium = true
             ),
             Rule(
                 id = "PCI_001",
@@ -1928,7 +1762,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 311,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(creditCard|cardNumber)\s*=\s*["']\d{13,19}["']""",
-                isPremium = true
             ),
             Rule(
                 id = "PCI_002",
@@ -1938,7 +1771,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 359,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(cvv|cvc|securityCode).*\.(save|persist|store)""",
-                isPremium = true
             ),
             Rule(
                 id = "HIPAA_001",
@@ -1948,7 +1780,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 311,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(medicalRecord|diagnosis|prescription).*save\((?!.*encrypt)""",
-                isPremium = true
             ),
             Rule(
                 id = "PRIVACY_001",
@@ -1958,7 +1789,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@Entity(?!.*@TTL|.*deleteAfter|.*expiresAt)""",
-                isPremium = true
             ),
             Rule(
                 id = "PRIVACY_002",
@@ -1968,7 +1798,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 359,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(analytics|tracking|sendToThirdParty).*userData(?!.*consent|.*hasAgreed)""",
-                isPremium = true
             ),
             
             // Code Quality & Security Best Practices (10 rules)
@@ -1980,7 +1809,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 391,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """catch\s*\([^)]+\)\s*\{\s*\}""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_002",
@@ -1990,7 +1818,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 547,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """(https?://)(api|admin|internal)\.(production|live)\..*["']""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_003",
@@ -2000,7 +1827,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(TODO|FIXME|HACK).*(auth|security|crypto|password|token)""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_004",
@@ -2010,7 +1836,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 477,
                 owasp = "A06:2021 - Vulnerable and Outdated Components",
                 pattern = """(@Deprecated|deprecated).*(encrypt|hash|sign|authenticate)""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_005",
@@ -2020,7 +1845,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 778,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """System\.(out|err)\.print""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_006",
@@ -2030,7 +1854,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """@RequestParam\s+String\s+\w+(?!.*@Size|.*@Length|.*@Max)""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_007",
@@ -2040,7 +1863,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 547,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(iterations|keySize|saltLength)\s*=\s*\d+(?!.*final|.*const)""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_008",
@@ -2050,7 +1872,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 396,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """catch\s*\(\s*(Exception|Throwable)\s+""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_009",
@@ -2060,7 +1881,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 586,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """protected\s+void\s+finalize\(\)(?!.*final)""",
-                isPremium = true
             ),
             Rule(
                 id = "QUALITY_010",
@@ -2070,7 +1890,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 498,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """public\s+Object\s+clone\(\)(?!.*CloneNotSupportedException)""",
-                isPremium = true
             ),
             
             // Advanced Crypto & Encoding (8 rules)
@@ -2082,7 +1901,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 326,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """KeyGenerator.*init\((128|512)(?!.*2048|.*4096)""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_007",
@@ -2092,7 +1910,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 329,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """IvParameterSpec\(.*["']\w+["']|iv\s*=\s*new byte\[\]""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_008",
@@ -2102,7 +1919,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 916,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(PBKDF2|PBEKeySpec).*iterations?\s*=\s*([1-9]\d{0,3}|[1-9]\d{4})(?!.*[1-9]\d{5,})""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_009",
@@ -2112,7 +1928,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 326,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """KeyPairGenerator.*RSA.*initialize\((512|1024)""",
-                isPremium = true
             ),
             Rule(
                 id = "CRYPTO_010",
@@ -2122,7 +1937,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 327,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """Cipher\.getInstance\(["']AES/(?!.*PKCS[57]Padding)""",
-                isPremium = true
             ),
             Rule(
                 id = "ENCODING_001",
@@ -2132,7 +1946,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 327,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(password|secret|token).*Base64\.encode""",
-                isPremium = true
             ),
             Rule(
                 id = "ENCODING_002",
@@ -2142,7 +1955,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 116,
                 owasp = "A03:2021 - Injection",
                 pattern = """URLEncoder\.encode.*(?!.*HTMLEscape|.*sanitize)""",
-                isPremium = true
             ),
             Rule(
                 id = "HASH_001",
@@ -2152,7 +1964,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 759,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """(hashPassword|passwordHash).*digest\((?!.*salt)""",
-                isPremium = true
             ),
             
             // Network & Protocol Security (7 rules)
@@ -2164,7 +1975,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """FTPClient|ftp://(?!.*sftp|.*ftps)""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_002",
@@ -2174,7 +1984,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """mail\.smtp(?!.*starttls|.*ssl)""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_003",
@@ -2184,7 +1993,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 350,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """HttpClient(?!.*HostnameVerifier|.*checkHostname)""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_004",
@@ -2194,7 +2002,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """Proxy\((?!.*Authenticator|.*credentials)""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_005",
@@ -2204,7 +2011,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 297,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """setHostnameVerifier.*ALLOW_ALL_HOSTNAME_VERIFIER""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_006",
@@ -2214,7 +2020,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """ws://(?!wss://)""",
-                isPremium = true
             ),
             Rule(
                 id = "NET_007",
@@ -2224,7 +2029,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(Socket|ServerSocket)\((?!.*setSoTimeout)""",
-                isPremium = true
             ),
             
             // Business Logic & Authorization (5 rules)
@@ -2236,7 +2040,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 639,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """findAll\(\)(?!.*currentUser|.*tenantId|.*@Filter)""",
-                isPremium = true
             ),
             Rule(
                 id = "AUTHZ_002",
@@ -2246,7 +2049,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 269,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(setRole|setPermissions|grantAuthority).*currentUser""",
-                isPremium = true
             ),
             Rule(
                 id = "AUTHZ_003",
@@ -2256,7 +2058,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 639,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(findById|getById).*@PathVariable(?!.*userId|.*ownerId)""",
-                isPremium = true
             ),
             Rule(
                 id = "BUSINESS_001",
@@ -2266,7 +2067,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 472,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(price|amount|total).*@RequestBody(?!.*validatePrice|.*@Min)""",
-                isPremium = true
             ),
             Rule(
                 id = "BUSINESS_002",
@@ -2276,7 +2076,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 362,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """balance.*=.*balance\s*[+-](?!.*synchronized|.*@Lock)""",
-                isPremium = true
             ),
             
             // Modern Framework Security (React, Angular, Vue) (8 rules)
@@ -2288,7 +2087,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 662,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """this\.state\.\w+\s*=(?!.*setState)""",
-                isPremium = true
             ),
             Rule(
                 id = "REACT_002",
@@ -2298,7 +2096,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """props\.\w+.*(?!PropTypes|interface.*Props)""",
-                isPremium = true
             ),
             Rule(
                 id = "REACT_003",
@@ -2308,7 +2105,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """useEffect\(.*\[\](?!.*exhaustive-deps)""",
-                isPremium = true
             ),
             Rule(
                 id = "ANGULAR_001",
@@ -2318,7 +2114,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 79,
                 owasp = "A03:2021 - Injection",
                 pattern = """\[innerHTML\]=["'].*\{\{(?!.*DomSanitizer)""",
-                isPremium = true
             ),
             Rule(
                 id = "ANGULAR_002",
@@ -2328,7 +2123,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """HttpClient(?!.*HttpInterceptor|.*interceptor)""",
-                isPremium = true
             ),
             Rule(
                 id = "VUE_001",
@@ -2338,7 +2132,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 79,
                 owasp = "A03:2021 - Injection",
                 pattern = """v-html=["'].*\{\{(?!.*sanitize|.*DOMPurify)""",
-                isPremium = true
             ),
             Rule(
                 id = "VUE_002",
@@ -2348,7 +2141,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """props:\s*\[\s*['"](?!.*type:|.*validator:)""",
-                isPremium = true
             ),
             Rule(
                 id = "NEXTJS_001",
@@ -2358,7 +2150,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """export\s+default.*handler.*req.*res(?!.*auth|.*session)""",
-                isPremium = true
             ),
             
             // Serverless & Cloud Native (10 rules)
@@ -2370,7 +2161,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """timeout:\s*([6-9]\d{2}|[1-9]\d{3,})""",
-                isPremium = true
             ),
             Rule(
                 id = "LAMBDA_002",
@@ -2380,7 +2170,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 405,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """handler.*getSecret|getParameter(?!.*global|.*cache)""",
-                isPremium = true
             ),
             Rule(
                 id = "LAMBDA_003",
@@ -2390,7 +2179,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 269,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """Action:\s*\*|Resource:\s*\*(?!.*Condition)""",
-                isPremium = true
             ),
             Rule(
                 id = "LAMBDA_004",
@@ -2400,7 +2188,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """Environment:.*Variables:.*API_KEY|PASSWORD|SECRET""",
-                isPremium = true
             ),
             Rule(
                 id = "SERVERLESS_001",
@@ -2410,7 +2197,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 923,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """functions:(?!.*vpc:|.*vpcConfig:).*rds|elasticache""",
-                isPremium = true
             ),
             Rule(
                 id = "CLOUDFORMATION_001",
@@ -2420,7 +2206,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(MasterUserPassword|Password|SecretString):\s*['"]\w{8,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "TERRAFORM_001",
@@ -2430,7 +2215,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 312,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """sensitive\s*=\s*false.*password|secret|key""",
-                isPremium = true
             ),
             Rule(
                 id = "TERRAFORM_002",
@@ -2440,7 +2224,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 311,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """backend\s+"s3"(?!.*encrypt\s*=\s*true)""",
-                isPremium = true
             ),
             Rule(
                 id = "SAM_001",
@@ -2450,7 +2233,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 778,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """AWS::Serverless::Function(?!.*Tracing:|.*Active)""",
-                isPremium = true
             ),
             Rule(
                 id = "APIGATEWAY_001",
@@ -2460,7 +2242,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """AWS::ApiGateway::RestApi(?!.*throttle|.*rateLimit)""",
-                isPremium = true
             ),
             
             // Container & Orchestration Advanced (8 rules)
@@ -2472,7 +2253,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """ENV\s+(PASSWORD|SECRET|KEY|TOKEN)\s*=\s*\S+""",
-                isPremium = true
             ),
             Rule(
                 id = "DOCKER_003",
@@ -2482,7 +2262,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 732,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """COPY(?!.*--chown).*\s+/""",
-                isPremium = true
             ),
             Rule(
                 id = "DOCKER_004",
@@ -2492,7 +2271,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """FROM\s+\w+(?!.*HEALTHCHECK)""",
-                isPremium = true
             ),
             Rule(
                 id = "K8S_003",
@@ -2502,7 +2280,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 923,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """kind:\s*Namespace(?!.*NetworkPolicy)""",
-                isPremium = true
             ),
             Rule(
                 id = "K8S_004",
@@ -2512,7 +2289,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """kind:\s*Pod(?!.*resources:.*limits:)""",
-                isPremium = true
             ),
             Rule(
                 id = "K8S_005",
@@ -2522,7 +2298,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 250,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """privileged:\s*true""",
-                isPremium = true
             ),
             Rule(
                 id = "HELM_001",
@@ -2532,7 +2307,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(password|secret|key):\s*['"]\w{8,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "ISTIO_001",
@@ -2542,7 +2316,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """mode:\s*PERMISSIVE""",
-                isPremium = true
             ),
             
             // Database & ORM Advanced (8 rules)
@@ -2554,7 +2327,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """prisma\.queryRaw.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "SEQUELIZE_001",
@@ -2564,7 +2336,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """sequelize\.query.*\+\s*\w+(?!.*replacements)""",
-                isPremium = true
             ),
             Rule(
                 id = "TYPEORM_001",
@@ -2574,7 +2345,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """\.where\(.*\+\s*\w+(?!.*parameters)""",
-                isPremium = true
             ),
             Rule(
                 id = "MONGODB_001",
@@ -2584,7 +2354,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 943,
                 owasp = "A03:2021 - Injection",
                 pattern = """where:.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "ELASTICSEARCH_001",
@@ -2594,7 +2363,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 943,
                 owasp = "A03:2021 - Injection",
                 pattern = """query.*query_string.*query:.*\+""",
-                isPremium = true
             ),
             Rule(
                 id = "CASSANDRA_001",
@@ -2604,7 +2372,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 89,
                 owasp = "A03:2021 - Injection",
                 pattern = """session\.execute\(.*\+\s*\w+""",
-                isPremium = true
             ),
             Rule(
                 id = "DYNAMODB_001",
@@ -2614,7 +2381,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 311,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """AWS::DynamoDB::Table(?!.*SSESpecification|.*Enabled.*true)""",
-                isPremium = true
             ),
             Rule(
                 id = "FIRESTORE_001",
@@ -2624,7 +2390,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """allow\s+(read|write):\s*if\s+true""",
-                isPremium = true
             ),
             
             // Testing & CI/CD Advanced (6 rules)
@@ -2636,7 +2401,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """(test|spec).*password\s*=\s*['"]\w{8,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "GITHUB_001",
@@ -2646,7 +2410,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 532,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """echo.*\$\{\{\s*secrets\.""",
-                isPremium = true
             ),
             Rule(
                 id = "GITHUB_002",
@@ -2656,7 +2419,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 94,
                 owasp = "A03:2021 - Injection",
                 pattern = """on:.*pull_request_target(?!.*if:.*github\.event\.pull_request\.head\.repo\.full_name)""",
-                isPremium = true
             ),
             Rule(
                 id = "GITLAB_001",
@@ -2666,7 +2428,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 532,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """variables:.*PASSWORD|SECRET(?!.*masked:\s*true)""",
-                isPremium = true
             ),
             Rule(
                 id = "JENKINS_001",
@@ -2676,7 +2437,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 522,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """credentials\(.*password.*\)(?!.*withCredentials)""",
-                isPremium = true
             ),
             Rule(
                 id = "SONAR_001",
@@ -2686,7 +2446,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """NOSONAR|squid:S\d+.*off(?!.*justification)""",
-                isPremium = true
             ),
             
             // Monitoring & Observability (6 rules)
@@ -2698,7 +2457,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """DD_API_KEY.*=.*['"]\w{32}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "NEWRELIC_001",
@@ -2708,7 +2466,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """NEW_RELIC_LICENSE_KEY.*=.*['"]\w{40}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "SENTRY_001",
@@ -2718,7 +2475,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 200,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """https://\w+@\w+\.ingest\.sentry\.io""",
-                isPremium = true
             ),
             Rule(
                 id = "PROMETHEUS_001",
@@ -2728,7 +2484,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 200,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """/metrics(?!.*BasicAuth|.*BearerToken)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAFANA_001",
@@ -2738,7 +2493,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """anonymous:\s*enabled:\s*true""",
-                isPremium = true
             ),
             Rule(
                 id = "ELASTIC_001",
@@ -2748,7 +2502,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """http\.host:\s*0\.0\.0\.0(?!.*xpack\.security\.enabled)""",
-                isPremium = true
             ),
             
             // API Security Advanced (12 rules)
@@ -2760,7 +2513,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """(api_key|apiKey|api-key)=.*\?""",
-                isPremium = true
             ),
             Rule(
                 id = "API_002",
@@ -2770,7 +2522,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@(Get|Post|Put|Delete)Mapping(?!.*@RateLimit|.*RateLimiter)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_003",
@@ -2780,7 +2531,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1188,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@RequestMapping\(['"]/(?!api/v\d+)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_004",
@@ -2790,7 +2540,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """findAll\(\)(?!.*Pageable|.*PageRequest)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_005",
@@ -2800,7 +2549,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 942,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """Access-Control-Allow-Origin:\s*\*""",
-                isPremium = true
             ),
             Rule(
                 id = "API_006",
@@ -2810,7 +2558,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 915,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@RequestBody.*@Entity""",
-                isPremium = true
             ),
             Rule(
                 id = "API_007",
@@ -2820,7 +2567,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 209,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """catch.*\.getMessage\(\).*return|response\.send\(error\)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_008",
@@ -2830,7 +2576,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@RequestBody(?!.*@Size|.*maxSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_009",
@@ -2840,7 +2585,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """@RestController(?!.*requiresSecure|.*HTTPS)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_010",
@@ -2850,7 +2594,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 922,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """localStorage\.setItem.*token|apiKey""",
-                isPremium = true
             ),
             Rule(
                 id = "API_011",
@@ -2860,7 +2603,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 639,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """@PathVariable.*Long\s+id(?!.*UUID)""",
-                isPremium = true
             ),
             Rule(
                 id = "API_012",
@@ -2870,7 +2612,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """RestTemplate\((?!.*timeout|.*connectionTimeout)""",
-                isPremium = true
             ),
             
             // Session Management (8 rules)
@@ -2882,7 +2623,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 384,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """login.*session(?!.*regenerateId|.*invalidate)""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_002",
@@ -2892,7 +2632,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 614,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """setMaxAge(?!.*setSecure.*setHttpOnly)""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_003",
@@ -2902,7 +2641,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 613,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """session\.timeout.*([3-9]\d{2,}|[2-9]\d{3,})""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_004",
@@ -2912,7 +2650,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """jsessionid|sessionid.*\?""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_005",
@@ -2922,7 +2659,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 330,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """sessionId.*=.*Math\.random|new Date\(\)\.getTime""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_006",
@@ -2932,7 +2668,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 645,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """SessionManagement(?!.*maximumSessions)""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_007",
@@ -2942,7 +2677,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 922,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """sessionStorage\.setItem.*user|userId|role""",
-                isPremium = true
             ),
             Rule(
                 id = "SESSION_008",
@@ -2952,7 +2686,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 613,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """logout.*(?!session\.invalidate|session\.destroy)""",
-                isPremium = true
             ),
             
             // Input Validation Advanced (10 rules)
@@ -2964,7 +2697,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1333,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """\(.*\+.*\)\+|\(.*\*.*\)\*""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_002",
@@ -2974,7 +2706,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 470,
                 owasp = "A03:2021 - Injection",
                 pattern = """Class\.forName.*\+|newInstance.*\+""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_003",
@@ -2984,7 +2715,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 190,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """int.*\+.*(?!Math\.addExact|.*overflow)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_004",
@@ -2994,7 +2724,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 129,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """\[\s*\w+\s*\](?!.*length|.*size)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_005",
@@ -3004,7 +2733,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """@.*\..*(?!.*RFC5322)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_006",
@@ -3014,7 +2742,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """phone.*@RequestParam(?!.*@Pattern)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_007",
@@ -3024,7 +2751,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """date.*String(?!.*DateTimeFormatter|.*@DateTimeFormat)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_008",
@@ -3034,7 +2760,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 601,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """URL\(.*\+(?!.*isValidUrl|.*whitelist)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_009",
@@ -3044,7 +2769,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 22,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """new File\(.*\+(?!.*sanitize|.*basename)""",
-                isPremium = true
             ),
             Rule(
                 id = "INPUT_010",
@@ -3054,7 +2778,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 434,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """getContentType\(\)(?!.*whitelist|.*ALLOWED_TYPES)""",
-                isPremium = true
             ),
             
             // Memory & Performance (8 rules)
@@ -3066,7 +2789,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1050,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@OneToMany.*fetch\s*=\s*FetchType\.LAZY(?!.*@BatchSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_002",
@@ -3076,7 +2798,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """session\.setAttribute.*List|Collection(?!.*size)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_003",
@@ -3086,7 +2807,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1050,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """(for|while).*\+\s*=\s*["'](?!.*StringBuilder)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_004",
@@ -3096,7 +2816,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """Executors\.newCachedThreadPool\(\)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_005",
@@ -3106,7 +2825,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 772,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """Files\.lines|BufferedReader(?!.*try-with-resources)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_006",
@@ -3116,7 +2834,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 405,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """DriverManager\.getConnection(?!.*pool)""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_007",
@@ -3126,7 +2843,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 524,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """@Cacheable.*password|secret|token""",
-                isPremium = true
             ),
             Rule(
                 id = "PERF_008",
@@ -3136,7 +2852,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 1050,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """IN\s*\([^)]{100,}\)""",
-                isPremium = true
             ),
             
             // GraphQL Security (6 rules)
@@ -3148,7 +2863,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@(Query|Mutation)(?!.*@MaxQueryDepth|.*depthLimit)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_002",
@@ -3158,7 +2872,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 200,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """introspection.*true|enableIntrospection.*true""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_003",
@@ -3168,7 +2881,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 400,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """GraphQLSchema(?!.*maxComplexity|.*complexityLimit)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_004",
@@ -3178,7 +2890,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """operationName.*\[\](?!.*maxBatchSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_005",
@@ -3188,7 +2899,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 862,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """@Field(?!.*@Authorized|.*@PreAuthorize|.*@Secured)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRAPHQL_006",
@@ -3198,7 +2908,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 209,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """GraphQLError.*printStackTrace|includeExceptionDetails.*true""",
-                isPremium = true
             ),
             
             // OAuth & SSO Security (8 rules)
@@ -3210,7 +2919,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 352,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """oauth.*authorize(?!.*state=)""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_002",
@@ -3220,7 +2928,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 601,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """redirect_uri.*\+|redirect_uri.*concat(?!.*whitelist|.*ALLOWED)""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_003",
@@ -3230,7 +2937,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 598,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """response_type=token(?!.*response_type=code)""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_004",
@@ -3240,7 +2946,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 798,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """client_secret.*=.*['"]\w{20,}['"]""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_005",
@@ -3250,7 +2955,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 347,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """decode.*JWT(?!.*verify|.*validateToken)""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_006",
@@ -3260,7 +2964,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 347,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """alg.*none|algorithm.*none""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_007",
@@ -3270,7 +2973,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 347,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """SAMLResponse(?!.*validateSignature|.*verifySignature)""",
-                isPremium = true
             ),
             Rule(
                 id = "OAUTH_008",
@@ -3280,7 +2982,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 940,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """authorization_code(?!.*code_challenge|.*code_verifier)""",
-                isPremium = true
             ),
             
             // gRPC & Protobuf Security (5 rules)
@@ -3292,7 +2993,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """NewServer\((?!.*tls|.*credentials)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRPC_002",
@@ -3302,7 +3002,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@GrpcService(?!.*@PreAuthorize|.*interceptor)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRPC_003",
@@ -3312,7 +3011,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """proto3(?!.*max_size|.*MaxMessageSize)""",
-                isPremium = true
             ),
             Rule(
                 id = "GRPC_004",
@@ -3322,7 +3020,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 200,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """reflection\.Register|EnableReflection.*true""",
-                isPremium = true
             ),
             Rule(
                 id = "GRPC_005",
@@ -3332,7 +3029,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 209,
                 owasp = "A09:2021 - Security Logging and Monitoring Failures",
                 pattern = """Status\.INTERNAL.*Exception|\.withDescription\(e\.getMessage""",
-                isPremium = true
             ),
             
             // WebSocket Security (6 rules)
@@ -3344,7 +3040,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 346,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """@ServerEndpoint(?!.*Configurator|.*checkOrigin)""",
-                isPremium = true
             ),
             Rule(
                 id = "WS_002",
@@ -3354,7 +3049,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 306,
                 owasp = "A07:2021 - Identification and Authentication Failures",
                 pattern = """@OnOpen(?!.*Principal|.*authenticate)""",
-                isPremium = true
             ),
             Rule(
                 id = "WS_003",
@@ -3364,7 +3058,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """@OnMessage(?!.*maxMessageSize|.*@Size)""",
-                isPremium = true
             ),
             Rule(
                 id = "WS_004",
@@ -3374,7 +3067,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 770,
                 owasp = "A04:2021 - Insecure Design",
                 pattern = """WebSocketHandler(?!.*RateLimiter|.*throttle)""",
-                isPremium = true
             ),
             Rule(
                 id = "WS_005",
@@ -3384,7 +3076,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 319,
                 owasp = "A02:2021 - Cryptographic Failures",
                 pattern = """ws://(?!.*wss://)""",
-                isPremium = true
             ),
             Rule(
                 id = "WS_006",
@@ -3394,7 +3085,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 352,
                 owasp = "A01:2021 - Broken Access Control",
                 pattern = """HandshakeInterceptor(?!.*csrf|.*token)""",
-                isPremium = true
             ),
             
             // Serialization Security (7 rules)
@@ -3406,7 +3096,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """ObjectInputStream.*readObject\(\)""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_002",
@@ -3416,7 +3105,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 611,
                 owasp = "A05:2021 - Security Misconfiguration",
                 pattern = """DocumentBuilderFactory(?!.*setFeature.*XMLConstants\.FEATURE_SECURE_PROCESSING)""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_003",
@@ -3426,7 +3114,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """Yaml\(\)\.load(?!.*SafeConstructor)""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_004",
@@ -3436,7 +3123,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """enableDefaultTyping\(\)|@JsonTypeInfo.*use\s*=\s*Id\.CLASS""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_005",
@@ -3446,7 +3132,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """pickle\.loads?\((?!.*safe)""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_006",
@@ -3456,7 +3141,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 502,
                 owasp = "A08:2021 - Software and Data Integrity Failures",
                 pattern = """unserialize\(.*GET|POST|REQUEST|COOKIE""",
-                isPremium = true
             ),
             Rule(
                 id = "SERIAL_007",
@@ -3466,7 +3150,6 @@ class VulnSpeedEngine : AutoCloseable {
                 cwe = 20,
                 owasp = "A03:2021 - Injection",
                 pattern = """parseFrom\((?!.*validate|.*schema)""",
-                isPremium = true
             )
         )
     }

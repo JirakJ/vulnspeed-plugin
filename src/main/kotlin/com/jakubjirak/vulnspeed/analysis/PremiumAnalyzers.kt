@@ -1,8 +1,6 @@
 package com.jakubjirak.vulnspeed.analysis
 
 import com.jakubjirak.vulnspeed.model.*
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import java.util.UUID
 
 /**
@@ -15,9 +13,6 @@ object PremiumAnalyzers {
      * AI-Powered Code Analysis - Uses pattern recognition for smarter vulnerability detection
      */
     fun analyzeWithAI(content: String, filePath: String, language: String): List<Vulnerability> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.AI_CODE_ANALYSIS)) {
-            return emptyList()
-        }
         
         val vulnerabilities = mutableListOf<Vulnerability>()
         val lines = content.lines()
@@ -64,9 +59,6 @@ object PremiumAnalyzers {
      * Secret Detection - Detects 50+ secret patterns
      */
     fun detectSecrets(content: String, filePath: String): List<Vulnerability> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SECRET_DETECTION)) {
-            return emptyList()
-        }
         
         val vulnerabilities = mutableListOf<Vulnerability>()
         val lines = content.lines()
@@ -147,9 +139,6 @@ object PremiumAnalyzers {
      * Infrastructure as Code (IaC) Scanning - Terraform, CloudFormation, Kubernetes YAML
      */
     fun scanInfrastructureAsCode(content: String, filePath: String): List<Vulnerability> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.IAC_SCANNING)) {
-            return emptyList()
-        }
         
         val vulnerabilities = mutableListOf<Vulnerability>()
         val lines = content.lines()
@@ -200,9 +189,6 @@ object PremiumAnalyzers {
      * API Security Testing - OpenAPI/Swagger analysis
      */
     fun analyzeApiSecurity(content: String, filePath: String): List<Vulnerability> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.API_SECURITY_TESTING)) {
-            return emptyList()
-        }
         
         val vulnerabilities = mutableListOf<Vulnerability>()
         val lines = content.lines()
@@ -255,9 +241,6 @@ object PremiumAnalyzers {
      * Code Complexity Analysis - Cyclomatic complexity and maintainability index
      */
     fun analyzeCodeComplexity(content: String, filePath: String, language: String): CodeComplexityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.CODE_COMPLEXITY_ANALYSIS)) {
-            return CodeComplexityReport(filePath, 0, 0.0, emptyList())
-        }
         
         val lines = content.lines()
         val functions = mutableListOf<FunctionComplexity>()
@@ -313,9 +296,6 @@ object PremiumAnalyzers {
      * Dependency Scanning - Check for known vulnerable dependencies
      */
     fun scanDependencies(content: String, filePath: String): List<DependencyVulnerability> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.DEPENDENCY_SCANNING)) {
-            return emptyList()
-        }
         
         val vulnerabilities = mutableListOf<DependencyVulnerability>()
         val fileExtension = filePath.substringAfterLast('/').lowercase()
@@ -379,9 +359,6 @@ object PremiumAnalyzers {
      * Generate SBOM (Software Bill of Materials) in CycloneDX format
      */
     fun generateSBOM(dependencies: List<DependencyInfo>, projectName: String): String {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SBOM_GENERATION)) {
-            return "{\"error\": \"SBOM generation requires Professional or Enterprise license\"}"
-        }
         
         val components = dependencies.map { dep ->
             """
@@ -413,9 +390,6 @@ object PremiumAnalyzers {
      * Compliance Dashboard Data - OWASP Top 10, CWE Top 25, PCI-DSS, HIPAA
      */
     fun getComplianceReport(vulnerabilities: List<Vulnerability>): ComplianceReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.COMPLIANCE_DASHBOARD)) {
-            return ComplianceReport(emptyMap(), emptyMap(), emptyMap())
-        }
         
         // Map CWE to compliance standards
         val owaspMapping = mapOf(

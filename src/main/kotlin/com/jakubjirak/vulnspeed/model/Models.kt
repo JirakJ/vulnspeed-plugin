@@ -68,8 +68,7 @@ data class ScanResult(
     val timestamp: Long,
     val durationMs: Long,
     val vulnerabilities: List<Vulnerability>,
-    val stats: ScanStats,
-    val tier: SubscriptionTier = SubscriptionTier.FREE
+    val stats: ScanStats
 )
 
 data class ScanStats(
@@ -80,31 +79,6 @@ data class ScanStats(
     val lowCount: Int,
     val filesScanned: Int,
     val linesOfCode: Long
-)
-
-enum class SubscriptionTier {
-    FREE, PREMIUM, ENTERPRISE
-}
-
-data class PluginLicense(
-    val tier: SubscriptionTier,
-    val userId: String,
-    val email: String,
-    val validUntil: Long,
-    val isTrial: Boolean = false,
-    val features: FeatureFlags = FeatureFlags()
-)
-
-data class FeatureFlags(
-    val gpuAcceleration: Boolean = false,
-    val advancedAnalysis: Boolean = false,
-    val autoFix: Boolean = false,
-    val customRules: Boolean = false,
-    val teamCollaboration: Boolean = false,
-    val sbomGeneration: Boolean = false,
-    val unlimitedScans: Boolean = false,
-    val prioritySupport: Boolean = false,
-    val maxLocPerScan: Long = 100_000
 )
 
 data class DeviceInfo(
@@ -123,6 +97,5 @@ data class Rule(
     val cwe: Int,
     val owasp: String,
     val pattern: String,
-    val enabled: Boolean = true,
-    val isPremium: Boolean = false
+    val enabled: Boolean = true
 )

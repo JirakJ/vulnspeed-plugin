@@ -1,7 +1,5 @@
 package com.jakubjirak.vulnspeed.analysis
 
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import com.jakubjirak.vulnspeed.model.Severity
 
 /**
@@ -23,9 +21,6 @@ class SpecializedSecurityAnalyzers {
      * Detects buffer overflows, use-after-free, memory corruption vulnerabilities
      */
     fun analyzeMemorySafety(content: String, filePath: String): MemorySafetyReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.MEMORY_SAFETY_ANALYSIS)) {
-            return MemorySafetyReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val vulnerabilities = mutableListOf<MemoryVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -88,9 +83,6 @@ class SpecializedSecurityAnalyzers {
      * IoT/embedded firmware vulnerability analysis
      */
     fun analyzeFirmwareSecurity(content: String, filePath: String): FirmwareSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.FIRMWARE_SECURITY_SCAN)) {
-            return FirmwareSecurityReport(filePath, emptyList(), emptyList())
-        }
 
         val vulnerabilities = mutableListOf<FirmwareVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -143,9 +135,6 @@ class SpecializedSecurityAnalyzers {
      * Solidity and Rust (Solana) smart contract security
      */
     fun analyzeSmartContract(content: String, filePath: String): SmartContractReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.BLOCKCHAIN_SMART_CONTRACT)) {
-            return SmartContractReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val vulnerabilities = mutableListOf<SmartContractVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -221,9 +210,6 @@ class SpecializedSecurityAnalyzers {
      * OAuth/OIDC Misconfiguration Detection
      */
     fun analyzeOAuthOIDC(content: String, filePath: String): OAuthOIDCReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.OAUTH_OIDC_ANALYSIS)) {
-            return OAuthOIDCReport(filePath, emptyList(), emptyList())
-        }
 
         val vulnerabilities = mutableListOf<OAuthVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -276,9 +262,6 @@ class SpecializedSecurityAnalyzers {
      * Crypto algorithm deprecation and migration analysis
      */
     fun analyzeCryptographicAgility(content: String, filePath: String): CryptoAgilityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.CRYPTOGRAPHIC_AGILITY)) {
-            return CryptoAgilityReport(filePath, emptyList(), emptyMap(), emptyList())
-        }
 
         val findings = mutableListOf<CryptoAgilityFinding>()
         val migrationPaths = mutableMapOf<String, String>()
@@ -324,9 +307,6 @@ class SpecializedSecurityAnalyzers {
      * Sidecar Proxy Security (Envoy, Istio)
      */
     fun analyzeSidecarProxySecurity(content: String, filePath: String): SidecarSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SIDECAR_PROXY_SECURITY)) {
-            return SidecarSecurityReport(filePath, emptyList(), emptyList())
-        }
 
         val findings = mutableListOf<SidecarFinding>()
         val recommendations = mutableListOf<String>()
@@ -377,9 +357,6 @@ class SpecializedSecurityAnalyzers {
      * Edge/CDN security configuration analysis
      */
     fun analyzeEdgeComputingSecurity(content: String, filePath: String): EdgeSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.EDGE_COMPUTING_SECURITY)) {
-            return EdgeSecurityReport(filePath, emptyList(), emptyList())
-        }
 
         val findings = mutableListOf<EdgeSecurityFinding>()
         val recommendations = mutableListOf<String>()

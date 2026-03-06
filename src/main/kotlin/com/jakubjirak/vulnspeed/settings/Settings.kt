@@ -7,7 +7,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.options.Configurable
-import com.jakubjirak.vulnspeed.model.SubscriptionTier
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 import javax.swing.JLabel
@@ -73,9 +72,6 @@ class VulnSpeedAppConfigurable : Configurable {
         maxFilePanel.add(maxFileSizeField, BorderLayout.EAST)
         panel.add(maxFilePanel)
         
-        val infoLabel = JLabel("Premium features enabled with subscription")
-        panel.add(infoLabel)
-        
         return panel
     }
     
@@ -105,7 +101,6 @@ class VulnSpeedProjectSettings : PersistentStateComponent<VulnSpeedProjectSettin
     var excludePatterns = listOf("**/node_modules/**", "**/build/**", "**/.git/**")
     var scanOnSave = false
     var autoFixOnSave = false
-    var tier: SubscriptionTier = SubscriptionTier.FREE
     
     override fun getState(): VulnSpeedProjectSettings = this
     
@@ -113,7 +108,6 @@ class VulnSpeedProjectSettings : PersistentStateComponent<VulnSpeedProjectSettin
         this.excludePatterns = state.excludePatterns
         this.scanOnSave = state.scanOnSave
         this.autoFixOnSave = state.autoFixOnSave
-        this.tier = state.tier
     }
     
     companion object {
@@ -138,13 +132,9 @@ open class VulnSpeedProjectConfigurable(val project: Project) : Configurable {
         scanOnSaveCheckbox.isSelected = settings.scanOnSave
         panel.add(scanOnSaveCheckbox)
         
-        autoFixCheckbox = JCheckBox("Auto-fix on save (Premium)")
+        autoFixCheckbox = JCheckBox("Auto-fix on save")
         autoFixCheckbox.isSelected = settings.autoFixOnSave
-        autoFixCheckbox.isEnabled = settings.tier != SubscriptionTier.FREE
         panel.add(autoFixCheckbox)
-        
-        val tierLabel = JLabel("Subscription Tier: ${settings.tier}")
-        panel.add(tierLabel)
         
         return panel
     }

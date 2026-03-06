@@ -1,7 +1,5 @@
 package com.jakubjirak.vulnspeed.analysis
 
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import com.jakubjirak.vulnspeed.model.Severity
 import com.jakubjirak.vulnspeed.model.VulnerabilityType
 
@@ -16,9 +14,6 @@ class EnterpriseSecurityAnalyzers {
      * Detects software supply chain attacks and dependency hijacking
      */
     fun analyzeSupplyChainSecurity(content: String, filePath: String, dependencies: List<String>): SupplyChainReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SUPPLY_CHAIN_SECURITY)) {
-            return SupplyChainReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val risks = mutableListOf<SupplyChainRisk>()
         val recommendations = mutableListOf<String>()
@@ -78,9 +73,6 @@ class EnterpriseSecurityAnalyzers {
      * Analyzes runtime behavior patterns and detects anomalies
      */
     fun analyzeBehavioralPatterns(content: String, filePath: String): BehavioralReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.BEHAVIORAL_ANALYSIS)) {
-            return BehavioralReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val behaviors = mutableListOf<BehaviorPattern>()
         val anomalies = mutableListOf<BehaviorAnomaly>()
@@ -140,9 +132,6 @@ class EnterpriseSecurityAnalyzers {
      * Analyzes CI/CD pipeline configurations for security issues
      */
     fun analyzeDevSecOpsConfig(content: String, filePath: String): DevSecOpsReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.DEVSECOPS_INTEGRATION)) {
-            return DevSecOpsReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val issues = mutableListOf<DevSecOpsIssue>()
         val recommendations = mutableListOf<String>()
@@ -192,9 +181,6 @@ class EnterpriseSecurityAnalyzers {
         codeMetrics: CodeMetrics,
         complianceStatus: ComplianceStatus
     ): SecurityPostureReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SECURITY_POSTURE_MANAGEMENT)) {
-            return SecurityPostureReport(0.0, emptyMap(), emptyList(), "")
-        }
 
         val scores = mutableMapOf<String, Double>()
 
@@ -240,9 +226,6 @@ class EnterpriseSecurityAnalyzers {
         vulnerabilities: List<VulnerabilityInfo>,
         dependencyGraph: Map<String, List<String>>
     ): CorrelationReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.VULNERABILITY_CORRELATION)) {
-            return CorrelationReport(emptyList(), emptyList(), emptyMap())
-        }
 
         val correlations = mutableListOf<VulnerabilityCorrelation>()
         val attackChains = mutableListOf<AttackChain>()
@@ -298,9 +281,6 @@ class EnterpriseSecurityAnalyzers {
         content: String,
         filePath: String
     ): RemediationReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.REMEDIATION_AUTOMATION)) {
-            return RemediationReport(filePath, emptyList(), emptyList(), 0)
-        }
 
         val remediations = mutableListOf<Remediation>()
         val patches = mutableListOf<AutoPatch>()
@@ -330,9 +310,6 @@ class EnterpriseSecurityAnalyzers {
         vulnerabilities: List<VulnerabilityInfo>,
         historicalData: List<HistoricalScan>
     ): SecurityMetricsReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SECURITY_METRICS_ANALYTICS)) {
-            return SecurityMetricsReport(emptyMap(), emptyList(), emptyMap())
-        }
 
         val metrics = mutableMapOf<String, Double>()
         val trends = mutableListOf<MetricTrend>()
@@ -377,9 +354,6 @@ class EnterpriseSecurityAnalyzers {
         filePath: String,
         dependencies: List<String>
     ): ThreatIntelReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.THREAT_INTELLIGENCE_FEED)) {
-            return ThreatIntelReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val threats = mutableListOf<ThreatIndicator>()
         val advisories = mutableListOf<SecurityAdvisory>()

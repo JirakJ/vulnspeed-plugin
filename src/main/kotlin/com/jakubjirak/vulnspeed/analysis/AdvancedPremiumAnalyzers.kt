@@ -1,8 +1,6 @@
 package com.jakubjirak.vulnspeed.analysis
 
 import com.jakubjirak.vulnspeed.model.*
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import java.util.UUID
 
 /**
@@ -15,9 +13,6 @@ object AdvancedPremiumAnalyzers {
      * Threat Modeling - Auto-generate STRIDE threat models
      */
     fun generateThreatModel(content: String, filePath: String, language: String): ThreatModelReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.THREAT_MODELING)) {
-            return ThreatModelReport(filePath, emptyList(), emptyList())
-        }
         
         val threats = mutableListOf<ThreatEntry>()
         val mitigations = mutableListOf<MitigationSuggestion>()
@@ -95,9 +90,6 @@ object AdvancedPremiumAnalyzers {
      * Attack Surface Analysis - Visualize entry points and attack vectors
      */
     fun analyzeAttackSurface(content: String, filePath: String, language: String): AttackSurfaceReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.ATTACK_SURFACE_ANALYSIS)) {
-            return AttackSurfaceReport(filePath, emptyList(), emptyList(), 0.0)
-        }
         
         val entryPoints = mutableListOf<EntryPoint>()
         val attackVectors = mutableListOf<AttackVector>()
@@ -143,9 +135,6 @@ object AdvancedPremiumAnalyzers {
      * Vulnerability Prediction - Predict potential vulnerabilities using ML patterns
      */
     fun predictVulnerabilities(content: String, filePath: String): List<VulnerabilityPrediction> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.VULNERABILITY_PREDICTION)) {
-            return emptyList()
-        }
         
         val predictions = mutableListOf<VulnerabilityPrediction>()
         val lines = content.lines()
@@ -222,9 +211,6 @@ object AdvancedPremiumAnalyzers {
      * AI Code Review - AI-powered security code review suggestions
      */
     fun performAICodeReview(content: String, filePath: String, language: String): CodeReviewReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.CODE_REVIEW_AI)) {
-            return CodeReviewReport(filePath, emptyList(), 0, 0.0)
-        }
         
         val suggestions = mutableListOf<CodeReviewSuggestion>()
         val lines = content.lines()
@@ -307,9 +293,6 @@ object AdvancedPremiumAnalyzers {
      * Zero-Day Detection - Detect potential zero-day vulnerabilities using advanced patterns
      */
     fun detectZeroDayPotential(content: String, filePath: String): List<ZeroDayCandidate> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.ZERO_DAY_DETECTION)) {
-            return emptyList()
-        }
         
         val candidates = mutableListOf<ZeroDayCandidate>()
         val lines = content.lines()
@@ -380,9 +363,6 @@ object AdvancedPremiumAnalyzers {
      * Penetration Test Hints - Generate actionable hints for penetration testing
      */
     fun generatePentestHints(content: String, filePath: String): List<PentestHint> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.PENETRATION_TEST_HINTS)) {
-            return emptyList()
-        }
         
         val hints = mutableListOf<PentestHint>()
         val lines = content.lines()
@@ -457,9 +437,6 @@ object AdvancedPremiumAnalyzers {
      * Security Training - Generate contextual learning content
      */
     fun generateSecurityTraining(content: String, filePath: String, vulnerabilities: List<Vulnerability>): List<TrainingModule> {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SECURITY_TRAINING)) {
-            return emptyList()
-        }
         
         val modules = mutableListOf<TrainingModule>()
         val coveredCWEs = mutableSetOf<Int>()

@@ -1,7 +1,5 @@
 package com.jakubjirak.vulnspeed.analysis
 
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import com.jakubjirak.vulnspeed.model.Severity
 import com.jakubjirak.vulnspeed.model.VulnerabilityType
 
@@ -22,9 +20,6 @@ class AdvancedSecurityAnalyzers {
      * Verifies zero-trust principles: verify explicitly, least privilege, assume breach
      */
     fun analyzeZeroTrust(content: String, filePath: String): ZeroTrustReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.ZERO_TRUST_VALIDATION)) {
-            return ZeroTrustReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val findings = mutableListOf<ZeroTrustFinding>()
         val recommendations = mutableListOf<String>()
@@ -99,9 +94,6 @@ class AdvancedSecurityAnalyzers {
      * Detects injection, DoS, introspection attacks
      */
     fun analyzeGraphQLSecurity(content: String, filePath: String): GraphQLSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.GRAPHQL_SECURITY)) {
-            return GraphQLSecurityReport(filePath, emptyList(), emptyList())
-        }
 
         val vulnerabilities = mutableListOf<GraphQLVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -155,9 +147,6 @@ class AdvancedSecurityAnalyzers {
      * Origin validation, message integrity, secure handshake
      */
     fun analyzeWebSocketSecurity(content: String, filePath: String): WebSocketSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.WEBSOCKET_SECURITY)) {
-            return WebSocketSecurityReport(filePath, emptyList(), emptyList())
-        }
 
         val findings = mutableListOf<WebSocketFinding>()
         val recommendations = mutableListOf<String>()
@@ -214,9 +203,6 @@ class AdvancedSecurityAnalyzers {
      * Server-Side Request Forgery analysis with call-flow tracking
      */
     fun analyzeSSRF(content: String, filePath: String): SSRFReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SSRF_DEEP_SCAN)) {
-            return SSRFReport(filePath, emptyList(), emptyList())
-        }
 
         val vulnerabilities = mutableListOf<SSRFVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -270,9 +256,6 @@ class AdvancedSecurityAnalyzers {
      * Call-flow analysis for deserialization vulnerabilities
      */
     fun analyzeInsecureDeserialization(content: String, filePath: String): DeserializationReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.INSECURE_DESERIALIZATION)) {
-            return DeserializationReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val vulnerabilities = mutableListOf<DeserializationVulnerability>()
         val gadgetChains = mutableListOf<GadgetChainInfo>()

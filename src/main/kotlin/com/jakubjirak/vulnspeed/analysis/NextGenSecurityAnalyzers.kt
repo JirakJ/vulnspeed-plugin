@@ -1,7 +1,5 @@
 package com.jakubjirak.vulnspeed.analysis
 
-import com.jakubjirak.vulnspeed.licensing.LicenseFeature
-import com.jakubjirak.vulnspeed.licensing.LicenseManager
 import com.jakubjirak.vulnspeed.model.Severity
 
 /**
@@ -15,9 +13,6 @@ class NextGenSecurityAnalyzers {
      * Validates quantum-resistant cryptography implementations
      */
     fun analyzeQuantumSafeCrypto(content: String, filePath: String): QuantumCryptoReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.QUANTUM_SAFE_CRYPTO_SCAN)) {
-            return QuantumCryptoReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val vulnerabilities = mutableListOf<CryptoVulnerability>()
         val recommendations = mutableListOf<String>()
@@ -74,9 +69,6 @@ class NextGenSecurityAnalyzers {
      * Analyzes microservices architecture security patterns
      */
     fun analyzeMicroservicesSecurity(content: String, filePath: String): MicroservicesSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.MICROSERVICES_SECURITY)) {
-            return MicroservicesSecurityReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val issues = mutableListOf<MicroserviceIssue>()
         val patterns = mutableListOf<SecurityPattern>()
@@ -141,9 +133,6 @@ class NextGenSecurityAnalyzers {
      * Scans AWS/Azure/GCP security configurations
      */
     fun analyzeCloudSecurityPosture(content: String, filePath: String): CloudSecurityReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.CLOUD_SECURITY_POSTURE)) {
-            return CloudSecurityReport(filePath, emptyList(), emptyList(), "")
-        }
 
         val misconfigurations = mutableListOf<CloudMisconfiguration>()
         val recommendations = mutableListOf<String>()
@@ -211,9 +200,6 @@ class NextGenSecurityAnalyzers {
      * End-to-end data flow and leakage detection
      */
     fun analyzeDataFlow(content: String, filePath: String): DataFlowReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.DATA_FLOW_TRACKING)) {
-            return DataFlowReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val sources = mutableListOf<DataSource>()
         val sinks = mutableListOf<DataSink>()
@@ -282,9 +268,6 @@ class NextGenSecurityAnalyzers {
      * Automated compliance reporting (SOC2, ISO27001, GDPR)
      */
     fun analyzeCompliance(content: String, filePath: String, framework: String): ComplianceAnalysisReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.COMPLIANCE_AUTOMATION)) {
-            return ComplianceAnalysisReport(filePath, framework, emptyList(), emptyList(), 0.0)
-        }
 
         val violations = mutableListOf<ComplianceViolationItem>()
         val controls = mutableListOf<ComplianceControlItem>()
@@ -311,9 +294,6 @@ class NextGenSecurityAnalyzers {
      * Chaos engineering for security testing
      */
     fun analyzeSecurityChaosReadiness(content: String, filePath: String): ChaosTestingReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.SECURITY_CHAOS_TESTING)) {
-            return ChaosTestingReport(filePath, emptyList(), emptyList(), 0.0)
-        }
 
         val experiments = mutableListOf<ChaosExperiment>()
         val weaknesses = mutableListOf<SecurityWeakness>()
@@ -380,9 +360,6 @@ class NextGenSecurityAnalyzers {
      * Automated API fuzzing and mutation testing
      */
     fun analyzeApiFuzzing(content: String, filePath: String): ApiFuzzingReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.API_FUZZING)) {
-            return ApiFuzzingReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val endpoints = mutableListOf<ApiEndpoint>()
         val fuzzTargets = mutableListOf<FuzzTarget>()
@@ -434,9 +411,6 @@ class NextGenSecurityAnalyzers {
      * IAM policy and access control analysis
      */
     fun analyzeIdentityAccess(content: String, filePath: String): IdentityAccessReport {
-        if (!LicenseManager.getInstance().isFeatureAvailable(LicenseFeature.IDENTITY_ACCESS_ANALYSIS)) {
-            return IdentityAccessReport(filePath, emptyList(), emptyList(), emptyList())
-        }
 
         val policies = mutableListOf<IamPolicy>()
         val issues = mutableListOf<AccessControlIssue>()

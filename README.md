@@ -9,15 +9,15 @@ GPU-accelerated static application security testing (SAST) plugin for JetBrains 
 - **OWASP Top 10 coverage** — detects all 10 categories including injection, broken access control, cryptographic failures, SSRF, and more
 - **CWE Top 25 coverage** — SQL injection (CWE-89), XSS (CWE-79), OS command injection (CWE-78), information disclosure (CWE-200), and 21+ more
 - **Global inspection** — VulnSpeed Security Analysis inspection integrated into IDE's inspection framework
-- **One-click auto-fixes** — quick-fix suggestions applied instantly via Alt+Enter (Premium)
+- **One-click auto-fixes** — quick-fix suggestions applied instantly via Alt+Enter
 - **Scan file** — right-click in editor → "Scan File with VulnSpeed" for on-demand analysis
 - **Scan project** — right-click project folder → "Scan Project with VulnSpeed" for full project scanning
 - **VulnSpeed tool window** — bottom panel displaying vulnerability list, statistics, and quick access to fixes
-- **GPU acceleration** — Metal/CUDA/Vulkan accelerated scanning, 50–100x faster than CPU-based SAST (Premium)
-- **Taint flow analysis** — advanced taint and data flow analysis for tracking vulnerability propagation (Premium)
-- **AI-powered false positive filtering** — ML-based filtering to reduce noise (Premium)
-- **Custom security rules** — define organization-specific vulnerability patterns (Premium)
-- **Team dashboard & metrics** — collaborative security metrics and reporting (Premium)
+- **GPU acceleration** — Metal/CUDA/Vulkan accelerated scanning, 50–100x faster than CPU-based SAST
+- **Taint flow analysis** — advanced taint and data flow analysis for tracking vulnerability propagation
+- **AI-powered false positive filtering** — ML-based filtering to reduce noise
+- **Custom security rules** — define organization-specific vulnerability patterns
+- **Team dashboard & metrics** — collaborative security metrics and reporting
 - **Configurable settings** — toggle real-time scanning, auto-fix, max file size, and telemetry preferences
 
 ## Installation
@@ -35,7 +35,7 @@ GPU-accelerated static application security testing (SAST) plugin for JetBrains 
 
 Settings → Tools → VulnSpeed
 
-Toggle real-time scanning, configure max file size limits, enable/disable auto-fix suggestions, and manage license activation.
+Toggle real-time scanning, configure max file size limits, enable/disable auto-fix suggestions.
 
 ## Usage
 
