@@ -51,6 +51,8 @@
   <li><a href="https://github.com/JirakJ/vulnspeed-plugin">Documentation</a></li>
 </ul>]]></description>
 
+    <product-descriptor code="PVULNSPEED" release-date="20260307" release-version="20263" optional="true"/>
+
     <change-notes><![CDATA[
         <h3>What's New</h3>
         <ul>
@@ -122,6 +124,9 @@
 
         <applicationService
             serviceImplementation="com.jakubjirak.vulnspeed.core.VulnSpeedEngine"/>
+
+        <applicationService
+            serviceImplementation="com.jakubjirak.vulnspeed.licensing.FreemiumGate"/>
     
         <notificationGroup id="VulnSpeed Feedback" displayType="BALLOON"/>
         <projectActivity implementation="com.jakubjirak.vulnspeed.feedback.FeedbackNotifier"/>
