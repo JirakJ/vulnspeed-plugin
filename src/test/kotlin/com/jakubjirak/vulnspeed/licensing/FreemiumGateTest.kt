@@ -16,7 +16,7 @@ class FreemiumGateTest : BasePlatformTestCase() {
     }
 
     fun testProductCodeIsCorrect() {
-        assertEquals("PVULNSPEED", FreemiumGate.PRODUCT_CODE)
+        assertEquals("PVULNSPEEDGPUAC", FreemiumGate.PRODUCT_CODE)
     }
 
     fun testGetLicenseStatusReturnsFreeWithoutLicense() {
