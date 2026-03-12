@@ -1,0 +1,13 @@
+name: Plugin Verification
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verify:
+    uses: JirakJ/intellij-plugin-verifier/.github/workflows/verify-plugin.yml@master
+    with:
+      gradle-plugin-version: "2.x"
