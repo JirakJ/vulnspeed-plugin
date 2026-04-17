@@ -40,6 +40,7 @@ dependencies {
 
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
+    testImplementation("com.google.code.gson:gson:2.10.1")
 }
 
 // Exclude IDE-provided libraries from plugin distribution

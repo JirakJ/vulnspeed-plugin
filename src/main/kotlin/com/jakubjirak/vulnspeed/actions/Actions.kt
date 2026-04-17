@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.Messages
 import com.jakubjirak.vulnspeed.core.VulnSpeedEngine
+import com.jakubjirak.vulnspeed.report.LastScanResultHolder
 import com.jakubjirak.vulnspeed.ui.VulnSpeedResultsPanel
 
 class ScanFileAction : AnAction() {
@@ -24,7 +25,8 @@ class ScanFileAction : AnAction() {
                     
                     val engine = VulnSpeedEngine.getInstance(project)
                     val result = engine.scanFile(file, project)
-                    
+                    LastScanResultHolder.getInstance(project).set(result)
+
                     // Show results in tool window
                     val toolWindow = com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
                         .getToolWindow("VulnSpeed")
@@ -56,7 +58,8 @@ class ScanProjectAction : AnAction() {
                 override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
                     val engine = VulnSpeedEngine.getInstance(project)
                     val result = engine.scanProject(project)
-                    
+                    LastScanResultHolder.getInstance(project).set(result)
+
                     // Show results in tool window
                     val toolWindow = com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
                         .getToolWindow("VulnSpeed")

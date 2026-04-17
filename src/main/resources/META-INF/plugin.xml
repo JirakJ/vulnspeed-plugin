@@ -132,7 +132,10 @@
 
         <applicationService
             serviceImplementation="com.jakubjirak.vulnspeed.licensing.FreemiumGate"/>
-    
+
+        <projectService
+            serviceImplementation="com.jakubjirak.vulnspeed.report.LastScanResultHolder"/>
+
         <notificationGroup id="VulnSpeed Feedback" displayType="BALLOON"/>
         <projectActivity implementation="com.jakubjirak.vulnspeed.feedback.FeedbackNotifier"/>
     </extensions>
@@ -154,9 +157,17 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
 
+        <action
+            id="VulnSpeed.ExportSarif"
+            class="com.jakubjirak.vulnspeed.report.ExportSarifReportAction"
+            text="Export SARIF Report"
+            description="Export the latest VulnSpeed scan results as a SARIF 2.1.0 report for GitHub Code Scanning / GitLab SAST."/>
+
         <group id="VulnSpeed.MainGroup" popup="true" text="VulnSpeed" description="VulnSpeed Security Analysis">
             <reference ref="VulnSpeed.ScanFile"/>
             <reference ref="VulnSpeed.ScanProject"/>
+            <separator/>
+            <reference ref="VulnSpeed.ExportSarif"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
     </actions>

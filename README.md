@@ -60,3 +60,48 @@ With real-time scanning enabled (default), vulnerabilities are detected and high
 ## License
 
 Copyright © 2026 Jakub Jirák. All rights reserved.
+
+## SARIF Report Export
+
+VulnSpeed can export its scan results as a **SARIF 2.1.0** report — the
+industry-standard format understood by GitHub Code Scanning, GitLab SAST, Azure
+DevOps, SonarQube, and DefectDojo.
+
+### How to export
+
+1. Run a scan (**Scan File / Scan Project with VulnSpeed**).
+2. Open **Tools → VulnSpeed → Export SARIF Report**.
+3. Choose a destination — defaults to `vulnspeed-report.sarif` in the project root.
+
+The exporter writes UTF-8, generates stable `partialFingerprints` so repeated
+runs deduplicate in downstream systems, and is 100% schema-compliant with
+`https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json`.
+
+### GitHub Code Scanning integration
+
+Drop this into `.github/workflows/vulnspeed.yml` to upload VulnSpeed findings to
+the **Security → Code scanning** tab of your repository:
+
+```yaml
+name: VulnSpeed SAST
+on: [push, pull_request]
+
+jobs:
+  vulnspeed:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run VulnSpeed scan
+        run: ./gradlew vulnspeedScan --console=plain
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: build/reports/vulnspeed-report.sarif
+          category: vulnspeed
+```
+
+For GitLab, point the `sast` report artifact at `vulnspeed-report.sarif`; for
+Azure DevOps use the SARIF SAST Scans Tab extension.
