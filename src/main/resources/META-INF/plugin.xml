@@ -181,6 +181,12 @@
             text="Compare Against Security Baseline"
             description="Run a differential scan against the saved security baseline and surface regressions."/>
 
+        <action
+            id="VulnSpeed.EnrichCve"
+            class="com.jakubjirak.vulnspeed.enrichment.EnrichVulnerabilitiesAction"
+            text="Enrich Vulnerabilities (OSV / NVD)"
+            description="Enrich findings with CVSS, CWE, and fixed-version metadata from OSV.dev and NVD."/>
+
         <group id="VulnSpeed.MainGroup" popup="true" text="VulnSpeed" description="VulnSpeed Security Analysis">
             <reference ref="VulnSpeed.ScanFile"/>
             <reference ref="VulnSpeed.ScanProject"/>
@@ -190,6 +196,8 @@
             <separator/>
             <reference ref="VulnSpeed.CreateBaseline"/>
             <reference ref="VulnSpeed.CompareAgainstBaseline"/>
+            <separator/>
+            <reference ref="VulnSpeed.EnrichCve"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
     </actions>

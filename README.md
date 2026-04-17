@@ -114,6 +114,71 @@ refresh the baseline from a trusted branch.
 ### Real-Time Scanning
 With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed.
 
+## CVE Enrichment (OSV + NVD)
+
+VulnSpeed enriches scan findings whose `ruleId` contains a `CVE-YYYY-NNNNN`
+identifier with CVSS score & vector, textual severity, CWE mappings, publish /
+modify dates, reference links and fixed versions. Data is pulled from
+[OSV.dev](https://osv.dev) first, with [NVD](https://nvd.nist.gov) as fallback.
+
+### Offline-first cache
+
+Responses are stored in a TTL-bound disk cache and reused across runs:
+
+- Inside the IDE: `<configPath>/vulnspeed/cve-cache/` (per `PathManager`).
+- In CLI / CI: `~/.vulnspeed/cve-cache/` (or `$VULNSPEED_HOME/cve-cache`).
+
+Each CVE is a JSON file named `<CVE-ID>.json`. Deleting the directory forces a
+refresh. Use `--offline` to require cache hits only (no network calls).
+
+### In the IDE
+
+**Tools → VulnSpeed → Enrich Findings with CVE Metadata** opens a table of the
+last scan's vulnerabilities resolved against OSV/NVD. Copy a Markdown report
+for a PR, export JSON, or open the referenced advisories.
+
+### Headless CLI
+
+```bash
+java -cp vulnspeed.jar com.jakubjirak.vulnspeed.enrichment.CveEnrichmentCli \
+  --findings=build/vulnspeed/findings.json \
+  --out=build/vulnspeed/enriched.md \
+  --format=md \
+  --fail-on-severity=HIGH
+```
+
+Flags:
+
+| Flag | Description |
+|------|-------------|
+| `--findings=PATH` | JSON array of `Vulnerability` objects (from `--output=json` baseline CLI). |
+| `--out=PATH` | Output file (Markdown or JSON). |
+| `--format=md\|json` | Report format (default `md`). |
+| `--offline` | Disable network; use cache only. |
+| `--cache-dir=PATH` | Override cache location. |
+| `--cache-ttl-hours=N` | TTL for cached entries (default 168 = 7 days). |
+| `--fail-on-severity=LOW\|MEDIUM\|HIGH\|CRITICAL` | Exit `2` if any enriched finding meets or exceeds the level. |
+| `--timeout-ms=N` | Per-request timeout (default 10000). |
+
+Exit codes: `0` success, `1` fatal error, `2` severity policy tripped.
+
+### In CI (GitHub Actions)
+
+```yaml
+- name: Enrich findings
+  run: |
+    java -cp build/libs/vulnspeed.jar \
+      com.jakubjirak.vulnspeed.enrichment.CveEnrichmentCli \
+      --findings=build/vulnspeed/findings.json \
+      --out=build/vulnspeed/enriched.md \
+      --format=md \
+      --fail-on-severity=HIGH
+- uses: actions/cache@v4
+  with:
+    path: ~/.vulnspeed/cve-cache
+    key: vulnspeed-cve-${{ runner.os }}
+```
+
 ## Building from Source
 
 ```bash

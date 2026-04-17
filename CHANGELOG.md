@@ -4,7 +4,35 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
-## [2026.4.4] - 2026-04-17
+## [2026.4.5] - 2026-04-17
+
+### Added
+- **CVE Enrichment Layer (OSV + NVD).** Scan findings whose `ruleId` contains a
+  `CVE-YYYY-NNNNN` identifier are resolved against
+  [OSV.dev](https://osv.dev) (primary) and [NVD](https://nvd.nist.gov)
+  (fallback), yielding CVSS score / vector, textual severity, CWE mappings,
+  published / modified timestamps, reference URLs, fixed versions and affected
+  version ranges.
+- **Offline-first disk cache.** Responses are persisted to
+  `<configPath>/vulnspeed/cve-cache/` inside the IDE (or `~/.vulnspeed/cve-cache/`
+  for CLI/CI) with atomic writes and a configurable TTL (default 7 days). Each
+  CVE is a single JSON file, trivially cacheable across CI jobs.
+- **Resilient HTTP transport.** Retries with exponential backoff, honours
+  `Retry-After` on HTTP 429, treats 404 as "not found" (non-retry), and
+  swallows per-finding errors so one missing CVE never fails a whole scan.
+- **Headless CVE CLI.**
+  `com.jakubjirak.vulnspeed.enrichment.CveEnrichmentCli` reads a findings JSON
+  array, enriches each entry, emits Markdown or JSON, and exits `2` when
+  `--fail-on-severity=HIGH|CRITICAL` trips — ready for PR gating.
+- **IDE action.** **Tools → VulnSpeed → Enrich Findings with CVE Metadata**
+  surfaces the last scan as a JBTable with CVSS, severity, CWE and fix-version
+  columns and a one-click Markdown export.
+- **Extensive tests.** OSV/NVD parsers, retry/backoff, 429/404 behaviour,
+  cache TTL & atomic writes, orchestrator fallback, Markdown reporter and
+  CLI exit codes are all covered against an in-process
+  `com.sun.net.httpserver.HttpServer` — 100% offline, zero flaky network calls.
+
+
 
 ### Added
 - **Security Baseline & Differential Scan.** Snapshot the current scan as an
