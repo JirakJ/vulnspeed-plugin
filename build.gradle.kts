@@ -40,6 +40,7 @@ dependencies {
 
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
+    testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.code.gson:gson:2.10.1")
 }
 
@@ -69,9 +70,10 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            ide("IC", "2023.2.8")
-            ide("IC", "2024.3")
-            ide("IC", "2025.1.3")
+            ide("IC", "2025.1.7", useInstaller = false)
+            ide("IC", "2025.2.6.1", useInstaller = false)
+            ide("IC", "2025.3.2", useInstaller = false)
+            ide("IC", "2026.1", useInstaller = false)
         }
     }
 

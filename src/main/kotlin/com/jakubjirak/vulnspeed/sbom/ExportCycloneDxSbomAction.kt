@@ -179,8 +179,8 @@ class ExportCycloneDxSbomAction : AnAction() {
     }
 
     private fun pluginVersion(): String {
-        val id = com.intellij.openapi.extensions.PluginId.findId("com.jakubjirak.vulnspeed")
-        val descriptor = id?.let { com.intellij.ide.plugins.PluginManagerCore.getPlugin(it) }
+        val id = com.intellij.openapi.extensions.PluginId.getId("com.jakubjirak.vulnspeed")
+        val descriptor = com.intellij.ide.plugins.PluginManagerCore.getPlugin(id)
         return descriptor?.version ?: "unknown"
     }
 

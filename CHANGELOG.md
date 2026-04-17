@@ -4,6 +4,26 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.4.6] - 2026-04-17
+
+### Fixed
+- **IntelliJ Platform API compatibility (2025.3 / 2026.1).** Replaced all 5
+  scheduled-for-removal API usages (`PluginId.findId(String)`) with the modern
+  `PluginId.getId(String)` equivalent in `ExportCycloneDxSbomAction`,
+  `ExportSarifReportAction`, `CompareAgainstVulnBaselineAction`,
+  `CreateVulnBaselineAction`, and `EnrichVulnerabilitiesAction`. Without this
+  change, the SBOM/SARIF/baseline/enrichment actions would have stopped
+  resolving the plugin descriptor in the next major IntelliJ Platform release.
+- **Deprecated API removals.** Replaced all 3 usages of the deprecated
+  `FileSaverDescriptor(title, description, String... extensions)` constructor
+  with `FileSaverDescriptor(title, description).withExtensionFilter(ext)`
+  in the CycloneDX SBOM, SARIF report, and baseline-diff export dialogs.
+
+### Changed
+- Bumped IntelliJ Platform Gradle plugin to `2.6.0` and extended plugin
+  verification matrix to include `IC-2025.1.7`, `IC-2025.2.6.1`,
+  `IC-2025.3.2`, and `IC-2026.1`.
+
 ## [2026.4.5] - 2026-04-17
 
 ### Added

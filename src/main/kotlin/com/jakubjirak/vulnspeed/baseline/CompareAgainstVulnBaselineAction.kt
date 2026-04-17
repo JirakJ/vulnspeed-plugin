@@ -116,8 +116,8 @@ class CompareAgainstVulnBaselineAction : AnAction() {
     }
 
     private fun pluginVersion(): String {
-        val id = PluginId.findId("com.jakubjirak.vulnspeed")
-        return id?.let { PluginManagerCore.getPlugin(it) }?.version ?: "unknown"
+        val id = PluginId.getId("com.jakubjirak.vulnspeed")
+        return PluginManagerCore.getPlugin(id)?.version ?: "unknown"
     }
 
     /** Dialog rendering the three diff buckets with associated actions. */
