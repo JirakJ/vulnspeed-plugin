@@ -4,6 +4,21 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.4.3] - 2026-04-17
+
+### Added
+- **CycloneDX v1.5 SBOM export.** New action **Tools → VulnSpeed → Export
+  CycloneDX SBOM** emits a Software Bill of Materials JSON file
+  (`vulnspeed-sbom.cdx.json`) compatible with Dependency-Track, Sonatype
+  Lifecycle, GitHub Dependency Graph, and FOSSA. Components are discovered
+  from `pom.xml`, `package.json` + `package-lock.json`, `requirements.txt`,
+  and literal Gradle `implementation("g:a:v")` strings. Vulnerabilities from
+  the latest cached scan are cross-referenced into the `vulnerabilities[]`
+  section with CVSS v3.1 ratings and CWE identifiers.
+- Deterministic UUIDv5 `serialNumber` derived from sorted component PURLs —
+  identical inputs yield identical SBOM identifiers, which makes SBOM diffs
+  in Git and change-detection in Dependency-Track trivially reliable.
+
 ## [2026.4.2] - 2026-04-15
 
 ### Added

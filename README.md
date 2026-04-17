@@ -105,3 +105,37 @@ jobs:
 
 For GitLab, point the `sast` report artifact at `vulnspeed-report.sarif`; for
 Azure DevOps use the SARIF SAST Scans Tab extension.
+
+## CycloneDX SBOM Export
+
+VulnSpeed can also export a **CycloneDX 1.5** Software Bill of Materials (SBOM)
+— the industry-standard supply-chain document consumed by Dependency-Track,
+Sonatype Lifecycle, GitHub Dependency Graph, FOSSA, and the `cyclonedx-cli`
+tool.
+
+### How to export
+
+1. Run a scan (optional — the exporter will offer to run one if no scan is cached).
+2. Open **Tools → VulnSpeed → Export CycloneDX SBOM**.
+3. Choose a destination — defaults to `vulnspeed-sbom.cdx.json` in the project root.
+
+Components are discovered from `pom.xml`, `package.json` + `package-lock.json`,
+`requirements.txt`, and literal `implementation("g:a:v")` strings in
+`build.gradle.kts` / `build.gradle`. Vulnerabilities from the latest scan are
+cross-referenced into the `vulnerabilities[]` section with CVSS v3.1 ratings
+and CWE identifiers. The `serialNumber` is a deterministic UUIDv5 derived
+from sorted component PURLs, so repeat exports stay identical unless the
+component set changes.
+
+### Dependency-Track upload example
+
+```bash
+curl -X POST \
+  -H "X-Api-Key: $DTRACK_API_KEY" \
+  -H "Content-Type: multipart/form-data" \
+  -F "autoCreate=true" \
+  -F "projectName=my-app" \
+  -F "projectVersion=1.0.0" \
+  -F "bom=@vulnspeed-sbom.cdx.json" \
+  https://dtrack.example.com/api/v1/bom
+```
