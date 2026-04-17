@@ -169,12 +169,27 @@
             text="Export CycloneDX SBOM"
             description="Export a CycloneDX 1.5 SBOM (components + vulnerabilities) for Dependency-Track / Sonatype / FOSSA."/>
 
+        <action
+            id="VulnSpeed.CreateBaseline"
+            class="com.jakubjirak.vulnspeed.baseline.CreateVulnBaselineAction"
+            text="Create Security Baseline"
+            description="Snapshot current findings as accepted into .vulnspeed-baseline.json."/>
+
+        <action
+            id="VulnSpeed.CompareAgainstBaseline"
+            class="com.jakubjirak.vulnspeed.baseline.CompareAgainstVulnBaselineAction"
+            text="Compare Against Security Baseline"
+            description="Run a differential scan against the saved security baseline and surface regressions."/>
+
         <group id="VulnSpeed.MainGroup" popup="true" text="VulnSpeed" description="VulnSpeed Security Analysis">
             <reference ref="VulnSpeed.ScanFile"/>
             <reference ref="VulnSpeed.ScanProject"/>
             <separator/>
             <reference ref="VulnSpeed.ExportSarif"/>
             <reference ref="VulnSpeed.ExportSbom"/>
+            <separator/>
+            <reference ref="VulnSpeed.CreateBaseline"/>
+            <reference ref="VulnSpeed.CompareAgainstBaseline"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
     </actions>

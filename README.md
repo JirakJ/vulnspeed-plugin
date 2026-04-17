@@ -48,6 +48,69 @@ Right-click a project folder → **Scan Project with VulnSpeed**. Review all fin
 ### Apply Fixes
 Click on a highlighted vulnerability → **Alt+Enter** → select the suggested fix to apply it instantly.
 
+## Security Baseline & Differential Scan
+
+Large legacy codebases usually produce thousands of historical SAST findings —
+without a baseline, security gates either drown teams in noise or get muted
+entirely. VulnSpeed's baseline feature snapshots today's findings as the
+accepted state and surfaces only *new regressions* on subsequent scans.
+
+### In the IDE
+
+- **Tools → VulnSpeed → Create Security Baseline** writes
+  `<project>/.vulnspeed-baseline.json` atomically from the latest scan.
+- **Tools → VulnSpeed → Compare Against Security Baseline** opens a three-tab
+  dialog (New Regressions / Fixed / Persisted) with buttons to copy a
+  Markdown report, export the diff as JSON, update the baseline, or jump to
+  the first regression in the editor.
+
+Fingerprints are SHA-256 of `ruleId|cwe|relativeFilePath|startLine|normalizedMessage`
+so cosmetic reformatting and numeric literal changes do not cause spurious
+regressions. Paths outside the project root fall back to a `file://` prefix.
+
+### In CI (GitHub Actions)
+
+```yaml
+name: Security Gate
+on:
+  pull_request:
+jobs:
+  vulnspeed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run VulnSpeed scan
+        run: ./gradlew vulnspeedScan # produces build/reports/vulnspeed/findings.json and vulnspeed-report.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: build/reports/vulnspeed/vulnspeed-report.sarif
+
+      - name: Differential scan vs baseline
+        run: |
+          java -cp build/libs/vulnspeed-plugin-*.jar \
+            com.jakubjirak.vulnspeed.baseline.VulnBaselineCli \
+            --compare \
+            --project="$PWD" \
+            --baseline=.vulnspeed-baseline.json \
+            --findings=build/reports/vulnspeed/findings.json \
+            --output=md \
+            --output-file=vulnspeed-diff.md \
+            --fail-on=severity:HIGH
+
+      - name: Comment diff on PR
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: vulnspeed-diff.md
+```
+
+The CLI exits `2` when `--fail-on` trips, `0` otherwise — so the job fails the
+PR check only when HIGH/CRITICAL regressions are introduced. Use `--create` to
+refresh the baseline from a trusted branch.
+
 ### Real-Time Scanning
 With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed.
 

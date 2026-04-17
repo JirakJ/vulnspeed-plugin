@@ -4,6 +4,22 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.4.4] - 2026-04-17
+
+### Added
+- **Security Baseline & Differential Scan.** Snapshot the current scan as an
+  accepted baseline via **Tools → VulnSpeed → Create Security Baseline**. The
+  baseline is written atomically to `<project>/.vulnspeed-baseline.json` with
+  deterministic SHA-256 fingerprints over `ruleId|cwe|relativeFilePath|line|
+  normalizedMessage`. Subsequent runs of **Compare Against Security Baseline**
+  open a three-tab dialog (New Regressions / Fixed / Persisted) and can copy a
+  PR-ready Markdown report, export the diff as JSON, update the baseline, or
+  jump to the first regression in the Problems view.
+- **Headless baseline CLI** (`com.jakubjirak.vulnspeed.baseline.VulnBaselineCli`)
+  with `--create` / `--compare`, configurable `--fail-on=regression` or
+  `--fail-on=severity:HIGH`, and `--output=md|json`. Exits `2` when the policy
+  trips so CI can gate builds without the IDE.
+
 ## [2026.4.3] - 2026-04-17
 
 ### Added
