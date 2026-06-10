@@ -4,7 +4,7 @@
  */
 package com.jakubjirak.vulnspeed.baseline
 
-import com.intellij.ide.plugins.PluginManager
+import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -107,6 +107,6 @@ class CreateVulnBaselineAction : AnAction() {
 
     private fun pluginVersion(): String {
         val id = PluginId.getId("com.jakubjirak.vulnspeed")
-        return PluginManager.getInstance().findEnabledPlugin(id)?.version ?: "unknown"
+        return PluginManagerCore.getPlugin(id)?.version ?: "unknown"
     }
 }

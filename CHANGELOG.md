@@ -4,6 +4,16 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.2] - 2026-06-10
+
+### Fixed
+- Plugin-version lookup no longer uses `PluginManager.findEnabledPlugin(PluginId)`,
+  which is marked `@ApiStatus.Internal` and flagged by the Marketplace Plugin
+  Verifier ("Internal method usage"). Replaced with the public
+  `PluginManagerCore.getPlugin(PluginId)` at all 6 call sites. Note: the
+  2026.6.1 migration went in the wrong direction — `PluginManagerCore.getPlugin`
+  carries no internal/deprecated annotations and is the correct public API.
+
 ## [2026.6.1] - 2026-06-10
 
 ### Changed
