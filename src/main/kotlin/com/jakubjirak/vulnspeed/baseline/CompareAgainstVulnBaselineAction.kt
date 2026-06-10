@@ -4,7 +4,7 @@
  */
 package com.jakubjirak.vulnspeed.baseline
 
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -117,7 +117,7 @@ class CompareAgainstVulnBaselineAction : AnAction() {
 
     private fun pluginVersion(): String {
         val id = PluginId.getId("com.jakubjirak.vulnspeed")
-        return PluginManagerCore.getPlugin(id)?.version ?: "unknown"
+        return PluginManager.getInstance().findEnabledPlugin(id)?.version ?: "unknown"
     }
 
     /** Dialog rendering the three diff buckets with associated actions. */

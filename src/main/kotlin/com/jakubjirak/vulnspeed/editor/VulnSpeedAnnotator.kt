@@ -11,8 +11,6 @@ import com.intellij.ui.JBColor
 import com.jakubjirak.vulnspeed.core.VulnSpeedEngine
 import com.jakubjirak.vulnspeed.model.Severity
 import com.jakubjirak.vulnspeed.quickfix.VulnSpeedQuickFix
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import java.awt.Color
 import java.awt.Font
 

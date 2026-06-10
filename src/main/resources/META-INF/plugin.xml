@@ -62,6 +62,10 @@
     <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260610" release-version="20266" optional="true"/>
 
     <change-notes><![CDATA[
+        <h3>2026.6.1 — Platform API cleanup</h3>
+        <ul>
+            <li>Plugin-version lookup migrated to the public <code>PluginManager</code> API; removed internal-API imports from the editor annotator</li>
+        </ul>
         <h3>2026.6.0 — Secrets, Suppression & Reports</h3>
         <ul>
             <li><b>Secrets Detection</b> — 12 new high-signal rules for AWS, GitHub, GitLab, Slack, Stripe, Google, SendGrid, Twilio, npm tokens, private key blocks, JWTs, and credentials in URLs (CWE-798)</li>

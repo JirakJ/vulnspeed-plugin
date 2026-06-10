@@ -4,6 +4,14 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.1] - 2026-06-10
+
+### Changed
+- Plugin-version lookup migrated from `PluginManagerCore` to the public
+  `PluginManager.getInstance().findEnabledPlugin(...)` API (6 call sites).
+- Removed unused internal-API imports (`HighlightInfo`, `HighlightInfoType`)
+  from `VulnSpeedAnnotator`.
+
 ## [2026.6.0] - 2026-06-10
 
 ### Added
