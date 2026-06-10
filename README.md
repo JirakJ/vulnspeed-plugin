@@ -1,10 +1,23 @@
 # VulnSpeed SAST
 
-GPU-accelerated static application security testing (SAST) plugin for JetBrains IDEs. Real-time vulnerability detection across Java, Python, C/C++, JavaScript, TypeScript, and Swift with OWASP Top 10 and CWE Top 25 coverage.
+GPU-accelerated static application security testing (SAST) plugin for JetBrains IDEs. Real-time vulnerability detection across Java, Kotlin, Python, C/C++, JavaScript, TypeScript, and Swift with OWASP Top 10 and CWE Top 25 coverage.
+
+## Screenshots
+
+| Inline detection in the editor | Security dashboard |
+|---|---|
+| ![Inline detection](docs/screenshots/01-inline-detection.png) | ![Dashboard](docs/screenshots/02-dashboard.png) |
+
+| Secrets detection | Settings |
+|---|---|
+| ![Secrets](docs/screenshots/03-secrets-detection.png) | ![Settings](docs/screenshots/04-settings.png) |
 
 ## Features
 
-- **Real-time vulnerability detection** — annotators scan code as you type with inline severity highlighting for Java, Python, JavaScript, and TypeScript
+- **Real-time vulnerability detection** — annotators scan code as you type with inline severity highlighting for Java, Kotlin, Python, JavaScript, and TypeScript
+- **Secrets detection** — 12 high-signal rules for AWS, GitHub, GitLab, Slack, Stripe, Google, SendGrid, Twilio, npm tokens, private keys, JWTs, and credentials in URLs (CWE-798)
+- **Inline suppression** — `// vulnspeed-ignore` or `// vulnspeed-ignore: RULE_ID` accepts a finding in place; `vulnspeed-ignore-file` opts out a generated file
+- **Shareable HTML report** — export the latest scan as a single self-contained HTML file with severity summary and CWE links
 - **Multi-language support** — full scanning for Java, Python, C/C++, JavaScript, TypeScript, and Swift
 - **OWASP Top 10 coverage** — detects all 10 categories including injection, broken access control, cryptographic failures, SSRF, and more
 - **CWE Top 25 coverage** — SQL injection (CWE-89), XSS (CWE-79), OS command injection (CWE-78), information disclosure (CWE-200), and 21+ more

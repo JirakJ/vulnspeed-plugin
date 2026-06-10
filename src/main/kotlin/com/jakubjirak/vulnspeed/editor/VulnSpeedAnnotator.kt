@@ -18,43 +18,46 @@ import java.awt.Font
 
 class VulnSpeedAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
-        val file = element.containingFile?.virtualFile ?: return
-        if (element != element.containingFile?.firstChild) return // Only annotate once per file
-        
-        ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-                val engine = VulnSpeedEngine.getInstance(element.project)
-                val result = engine.scanFile(file, element.project)
-                
-                ApplicationManager.getApplication().invokeLater {
-                    result.vulnerabilities.forEach { vuln ->
-                        // Create text range
-                        val document = com.intellij.openapi.fileEditor.FileDocumentManager.getInstance()
-                            .getDocument(file) ?: return@forEach
-                        
-                        val startOffset = document.getLineStartOffset(vuln.line - 1) + vuln.column - 1
-                        val endOffset = minOf(startOffset + 50, document.textLength)
-                        
-                        if (startOffset < document.textLength && endOffset > startOffset) {
-                            // Create annotation with appropriate severity
-                            val annotation = holder.newAnnotation(
-                                when (vuln.severity) {
-                                    Severity.CRITICAL -> com.intellij.lang.annotation.HighlightSeverity.ERROR
-                                    Severity.HIGH -> com.intellij.lang.annotation.HighlightSeverity.WARNING
-                                    Severity.MEDIUM -> com.intellij.lang.annotation.HighlightSeverity.WEAK_WARNING
-                                    else -> com.intellij.lang.annotation.HighlightSeverity.INFORMATION
-                                },
-                                buildMessage(vuln)
-                            ).range(com.intellij.openapi.util.TextRange(startOffset, endOffset))
-                            
-                            annotation.create()
-                        }
-                    }
+        val psiFile = element.containingFile ?: return
+        val file = psiFile.virtualFile ?: return
+        if (element != psiFile.firstChild) return // Only annotate once per file
+
+        // AnnotationHolder is only valid inside this call — annotations must be
+        // created synchronously, never from a pooled thread or invokeLater.
+        try {
+            val engine = VulnSpeedEngine.getInstance(element.project)
+            val result = engine.scanFile(file, element.project)
+            val document = com.intellij.openapi.fileEditor.FileDocumentManager.getInstance()
+                .getDocument(file) ?: return
+
+            result.vulnerabilities.forEach { vuln ->
+                if (vuln.line < 1 || vuln.line > document.lineCount) return@forEach
+
+                val lineStart = document.getLineStartOffset(vuln.line - 1)
+                val lineEnd = document.getLineEndOffset(vuln.line - 1)
+                val startOffset = (lineStart + vuln.column - 1).coerceIn(lineStart, lineEnd)
+                val endOffset = minOf(startOffset + 50, lineEnd)
+
+                if (endOffset > startOffset) {
+                    holder.newAnnotation(
+                        when (vuln.severity) {
+                            Severity.CRITICAL -> com.intellij.lang.annotation.HighlightSeverity.ERROR
+                            Severity.HIGH -> com.intellij.lang.annotation.HighlightSeverity.WARNING
+                            Severity.MEDIUM -> com.intellij.lang.annotation.HighlightSeverity.WEAK_WARNING
+                            else -> com.intellij.lang.annotation.HighlightSeverity.INFORMATION
+                        },
+                        buildMessage(vuln)
+                    ).range(com.intellij.openapi.util.TextRange(startOffset, endOffset))
+                        .create()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
+        } catch (e: Exception) {
+            LOG.warn("VulnSpeed annotation failed for ${file.path}: ${e.message}")
         }
+    }
+
+    companion object {
+        private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(VulnSpeedAnnotator::class.java)
     }
     
     private fun buildMessage(vuln: com.jakubjirak.vulnspeed.model.Vulnerability): String {

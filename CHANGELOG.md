@@ -4,6 +4,47 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.0] - 2026-06-10
+
+### Added
+- **Secrets detection (12 rules, CWE-798).** New `SECRET_*` ruleset detects
+  hardcoded AWS access keys, GitHub/GitLab/Slack/npm tokens, Stripe live keys,
+  Google/SendGrid/Twilio API keys, private key blocks, JWT literals, and
+  credentials embedded in URLs. Vendor-specific token formats keep false
+  positives near zero, and every finding ships a rotation-focused fix suggestion.
+- **Inline suppression directives.** `// vulnspeed-ignore` (same line or a
+  comment line above) suppresses findings on a line, `// vulnspeed-ignore:
+  RULE_ID, OTHER_ID` suppresses selectively, and `vulnspeed-ignore-file` within
+  the first five lines opts out a whole file. Works with `//`, `#`, `--`, `;`,
+  block, and HTML comment styles.
+- **HTML report export.** Tools → VulnSpeed → Export HTML Report renders the
+  latest scan as a single self-contained HTML file (severity summary cards +
+  per-finding table with CWE links), ready to share with a security team.
+- **Kotlin inline highlighting.** The as-you-type annotator now registers for
+  Kotlin via an optional plugin dependency — previously advertised but never wired.
+- **Tool window icon** (13 px, light + dark) and a dark-theme marketplace
+  plugin icon (`pluginIcon_dark.svg`).
+
+### Fixed
+- **Findings in the first 10 columns of a line were silently dropped.**
+  Snippet extraction used `minOf(0, column - 10)` instead of `maxOf`, producing
+  a negative substring index; the resulting exception aborted the rule's whole
+  file scan and swallowed every remaining finding.
+- **Editor annotations never appeared reliably.** The annotator created
+  annotations from `invokeLater` on a pooled thread after the highlighting pass
+  had finished — `AnnotationHolder` is only valid synchronously. Scanning now
+  runs inside `annotate()`.
+- **8 duplicate rule IDs** (`API_001–003`, `GRAPHQL_001–003`, `INPUT_001`,
+  `SESSION_001` existed twice) broke per-rule suppression, SARIF rule metadata,
+  and baseline fingerprints. The advanced variants are now `*_ADV_*`.
+- Engine and annotator exceptions are now logged via the platform `Logger`
+  instead of `printStackTrace()`.
+
+### Tests
+- 56 new tests (250 total): suppression directives, secrets rules incl.
+  negative samples, HTML exporter escaping/structure, and engine regression
+  tests for the column-1 snippet crash and rule-id uniqueness.
+
 ## [2026.4.6] - 2026-04-17
 
 ### Fixed

@@ -19,12 +19,20 @@
   <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, C/C++, and Swift</li>
 </ul>
 
-<h3>Remediation</h3>
+<h3>Secrets Detection</h3>
+<ul>
+  <li><b>12 High-Signal Secret Rules</b> — AWS, GitHub, GitLab, Slack, Stripe, Google, SendGrid, Twilio, npm tokens, private key blocks, JWTs, and credentials embedded in URLs</li>
+  <li><b>Near-Zero False Positives</b> — Vendor-specific token formats, not noisy entropy heuristics</li>
+</ul>
+
+<h3>Remediation &amp; Workflow</h3>
 <ul>
   <li><b>One-Click Auto-Fix</b> — Alt+Enter to apply automated remediation suggestions instantly</li>
+  <li><b>Inline Suppression</b> — <code>// vulnspeed-ignore</code> or <code>// vulnspeed-ignore: RULE_ID</code> comments to accept findings where you decide they are fine</li>
   <li><b>File Scanning</b> — Right-click in editor to scan the current file on demand</li>
   <li><b>Project Scanning</b> — Right-click a folder to scan the entire project with severity breakdown</li>
   <li><b>Security Dashboard</b> — Tool window with vulnerability list, statistics, and quick access to fixes</li>
+  <li><b>Shareable Reports</b> — Export findings as SARIF 2.1.0, CycloneDX SBOM, or a self-contained HTML report</li>
 </ul>
 
 <h3>Advanced Analysis</h3>
@@ -39,8 +47,8 @@
 
 <h3>Requirements</h3>
 <ul>
-  <li>IntelliJ IDEA 2023.3+ (or any JetBrains IDE)</li>
-  <li>JDK 11+</li>
+  <li>IntelliJ IDEA 2025.1+ (or any JetBrains IDE)</li>
+  <li>JDK 17+</li>
   <li>2 GB free RAM</li>
   <li>GPU optional (Metal, CUDA, or Vulkan for Pro acceleration)</li>
 </ul>
@@ -51,9 +59,20 @@
   <li><a href="https://github.com/JirakJ/vulnspeed-plugin">Documentation</a></li>
 </ul>]]></description>
 
-    <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260328" release-version="20264" optional="true"/>
+    <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260610" release-version="20266" optional="true"/>
 
     <change-notes><![CDATA[
+        <h3>2026.6.0 — Secrets, Suppression & Reports</h3>
+        <ul>
+            <li><b>Secrets Detection</b> — 12 new high-signal rules for AWS, GitHub, GitLab, Slack, Stripe, Google, SendGrid, Twilio, npm tokens, private key blocks, JWTs, and credentials in URLs (CWE-798)</li>
+            <li><b>Inline Suppression</b> — <code>// vulnspeed-ignore</code> and <code>// vulnspeed-ignore: RULE_ID</code> comments suppress findings on a line; <code>vulnspeed-ignore-file</code> opts out a whole file</li>
+            <li><b>HTML Report Export</b> — Self-contained HTML security report with severity summary cards and per-finding detail, ready to share</li>
+            <li><b>Kotlin inline highlighting</b> — As-you-type annotations now also run in Kotlin files (was advertised but never registered)</li>
+            <li><b>Fixed:</b> Findings in the first 10 columns of a line crashed snippet extraction and were silently dropped</li>
+            <li><b>Fixed:</b> Editor annotations were created asynchronously after the highlighting pass ended, so inline highlights never appeared reliably</li>
+            <li><b>New tool window icon</b> and dark-theme plugin icon</li>
+        </ul>
+
         <h3>2026.4.1 — Archive Fix</h3>
         <ul>
             <li><b>Fixed archive extraction</b> — Rebuilt plugin distribution to fix "archive cannot be extracted" error on JetBrains Marketplace</li>
@@ -75,6 +94,7 @@
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="vulnspeed-kotlin.xml">org.jetbrains.kotlin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <globalInspection
@@ -105,6 +125,7 @@
             id="VulnSpeed"
             anchor="bottom"
             secondary="false"
+            icon="/icons/vulnspeed.svg"
             factoryClass="com.jakubjirak.vulnspeed.ui.VulnSpeedToolWindowFactory"
             canCloseContents="false"
             doNotActivateOnStart="true"/>
@@ -164,6 +185,12 @@
             description="Export the latest VulnSpeed scan results as a SARIF 2.1.0 report for GitHub Code Scanning / GitLab SAST."/>
 
         <action
+            id="VulnSpeed.ExportHtml"
+            class="com.jakubjirak.vulnspeed.report.ExportHtmlReportAction"
+            text="Export HTML Report"
+            description="Export the latest VulnSpeed scan results as a self-contained HTML security report."/>
+
+        <action
             id="VulnSpeed.ExportSbom"
             class="com.jakubjirak.vulnspeed.sbom.ExportCycloneDxSbomAction"
             text="Export CycloneDX SBOM"
@@ -192,6 +219,7 @@
             <reference ref="VulnSpeed.ScanProject"/>
             <separator/>
             <reference ref="VulnSpeed.ExportSarif"/>
+            <reference ref="VulnSpeed.ExportHtml"/>
             <reference ref="VulnSpeed.ExportSbom"/>
             <separator/>
             <reference ref="VulnSpeed.CreateBaseline"/>

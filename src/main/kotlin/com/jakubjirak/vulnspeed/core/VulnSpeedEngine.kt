@@ -92,8 +92,7 @@ class VulnSpeedEngine : AutoCloseable {
                     filesScanned++
                 }
             } catch (e: Exception) {
-                // Log exception but continue scanning
-                e.printStackTrace()
+                LOG.warn("VulnSpeed failed to scan ${file.path}: ${e.message}")
             }
         }
         
@@ -124,13 +123,16 @@ class VulnSpeedEngine : AutoCloseable {
     
     private fun scanWithRule(content: String, filePath: String, rule: Rule, language: String): List<Vulnerability> {
         val vulns = mutableListOf<Vulnerability>()
-        
+
         try {
             val regex = Regex(rule.pattern, RegexOption.MULTILINE)
             val lines = content.lines()
-            
+
+            if (SuppressionDirectives.isFileSuppressed(lines)) return emptyList()
+
             lines.forEachIndexed { lineNum, line ->
                 regex.findAll(line).forEach { match ->
+                    if (SuppressionDirectives.isSuppressed(lines, lineNum, rule.id)) return@forEach
                     vulns.add(
                         Vulnerability(
                             id = UUID.randomUUID().toString(),
@@ -144,7 +146,7 @@ class VulnSpeedEngine : AutoCloseable {
                             column = match.range.first + 1,
                             message = rule.description,
                             codeSnippet = line.substring(
-                                minOf(0, match.range.first - 10),
+                                maxOf(0, match.range.first - 10),
                                 minOf(line.length, match.range.last + 11)
                             ),
                             confidence = 0.85f,
@@ -156,14 +158,23 @@ class VulnSpeedEngine : AutoCloseable {
                 }
             }
         } catch (e: Exception) {
-            // Invalid regex pattern, skip rule
+            LOG.warn("VulnSpeed rule ${rule.id} failed: ${e.message}")
         }
-        
+
         return vulns
     }
     
     private fun generateFixSuggestion(rule: Rule, codeLine: String): FixSuggestion? {
         return when {
+            rule.id.startsWith("SECRET") -> FixSuggestion(
+                title = "Remove Hardcoded Secret",
+                description = "Revoke and rotate the leaked credential, then load it from the environment or a secret manager",
+                code = "// Load from environment:\nString apiKey = System.getenv(\"API_KEY\");\n\n// Or from a secret manager (AWS example):\nGetSecretValueRequest request = new GetSecretValueRequest().withSecretId(\"my-secret\");",
+                references = listOf(
+                    "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html",
+                    "https://cwe.mitre.org/data/definitions/798.html"
+                )
+            )
             rule.id.startsWith("SQL") -> FixSuggestion(
                 title = "Use Parameterized Queries",
                 description = "Use prepared statements or parameterized queries to prevent SQL injection",
@@ -470,6 +481,7 @@ class VulnSpeedEngine : AutoCloseable {
     
     private fun parseVulnType(ruleId: String): VulnerabilityType {
         return when {
+            ruleId.startsWith("SECRET", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
             ruleId.contains("SQL", ignoreCase = true) || ruleId.contains("DB", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
             ruleId.contains("XSS", ignoreCase = true) -> VulnerabilityType.XSS
             ruleId.contains("CRYPTO", ignoreCase = true) || ruleId.contains("JWT", ignoreCase = true) || ruleId.contains("TOKEN", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
@@ -541,8 +553,7 @@ class VulnSpeedEngine : AutoCloseable {
     
     private fun collectProjectFiles(project: Project): List<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
-        val psiManager = PsiManager.getInstance(project)
-        
+
         // Walk project root
         project.basePath?.let { basePath ->
             walkDirectory(java.io.File(basePath), files)
@@ -571,7 +582,7 @@ class VulnSpeedEngine : AutoCloseable {
     
     
     private fun loadDefaultRules(): List<Rule> {
-        return listOf(
+        return SecretsRules.RULES + listOf(
             Rule(
                 id = "SQL_001",
                 name = "SQL Injection via String Concatenation",
@@ -2506,7 +2517,7 @@ class VulnSpeedEngine : AutoCloseable {
             
             // API Security Advanced (12 rules)
             Rule(
-                id = "API_001",
+                id = "API_ADV_001",
                 name = "API Key in Query Parameter",
                 description = "Sensitive API key passed in URL query string",
                 severity = Severity.HIGH,
@@ -2515,7 +2526,7 @@ class VulnSpeedEngine : AutoCloseable {
                 pattern = """(api_key|apiKey|api-key)=.*\?""",
             ),
             Rule(
-                id = "API_002",
+                id = "API_ADV_002",
                 name = "No API Rate Limiting",
                 description = "API endpoint without rate limiting",
                 severity = Severity.MEDIUM,
@@ -2524,7 +2535,7 @@ class VulnSpeedEngine : AutoCloseable {
                 pattern = """@(Get|Post|Put|Delete)Mapping(?!.*@RateLimit|.*RateLimiter)""",
             ),
             Rule(
-                id = "API_003",
+                id = "API_ADV_003",
                 name = "Missing API Versioning",
                 description = "API endpoint without version prefix",
                 severity = Severity.LOW,
@@ -2616,7 +2627,7 @@ class VulnSpeedEngine : AutoCloseable {
             
             // Session Management (8 rules)
             Rule(
-                id = "SESSION_001",
+                id = "SESSION_ADV_001",
                 name = "Session Fixation Vulnerability",
                 description = "Session ID not regenerated after login",
                 severity = Severity.HIGH,
@@ -2690,7 +2701,7 @@ class VulnSpeedEngine : AutoCloseable {
             
             // Input Validation Advanced (10 rules)
             Rule(
-                id = "INPUT_001",
+                id = "INPUT_ADV_001",
                 name = "Regex DoS (ReDoS)",
                 description = "Regex with exponential backtracking",
                 severity = Severity.HIGH,
@@ -2856,7 +2867,7 @@ class VulnSpeedEngine : AutoCloseable {
             
             // GraphQL Security (6 rules)
             Rule(
-                id = "GRAPHQL_001",
+                id = "GRAPHQL_ADV_001",
                 name = "GraphQL Query Depth Not Limited",
                 description = "GraphQL without query depth limiting",
                 severity = Severity.HIGH,
@@ -2865,7 +2876,7 @@ class VulnSpeedEngine : AutoCloseable {
                 pattern = """@(Query|Mutation)(?!.*@MaxQueryDepth|.*depthLimit)""",
             ),
             Rule(
-                id = "GRAPHQL_002",
+                id = "GRAPHQL_ADV_002",
                 name = "GraphQL Introspection Enabled in Production",
                 description = "GraphQL introspection not disabled in production",
                 severity = Severity.MEDIUM,
@@ -2874,7 +2885,7 @@ class VulnSpeedEngine : AutoCloseable {
                 pattern = """introspection.*true|enableIntrospection.*true""",
             ),
             Rule(
-                id = "GRAPHQL_003",
+                id = "GRAPHQL_ADV_003",
                 name = "GraphQL Query Complexity Not Limited",
                 description = "No complexity analysis on GraphQL queries",
                 severity = Severity.HIGH,
@@ -3159,6 +3170,8 @@ class VulnSpeedEngine : AutoCloseable {
     }
     
     companion object {
+        private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(VulnSpeedEngine::class.java)
+
         fun getInstance(project: Project): VulnSpeedEngine {
             return ApplicationManager.getApplication().getService(VulnSpeedEngine::class.java)
         }
