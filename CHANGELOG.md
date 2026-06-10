@@ -25,7 +25,24 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 - **Tool window icon** (13 px, light + dark) and a dark-theme marketplace
   plugin icon (`pluginIcon_dark.svg`).
 
+### Changed
+- **Modernized settings UI.** Both the application and project settings pages
+  are now built with the IntelliJ Kotlin UI DSL — grouped sections (Real-Time
+  Analysis / Performance / Privacy), aligned labels, inline help comments, and
+  a properly sized numeric "Max file size" field with a `KB` suffix instead of
+  the previous stretched full-width text box.
+
 ### Fixed
+- **Inline highlights never appeared in the editor.** The annotator gated on
+  `firstChild` (whose range is just the first token), so every finding outside
+  it threw "Range must be inside element being annotated" and was dropped. It
+  now annotates on the file node, whose range covers the whole document.
+- **Project settings were never saved.** The hand-rolled project configurable
+  hard-coded `isModified = true` and had an empty `apply()`; the bound UI DSL
+  now persists Scan-on-save / Auto-fix-on-save correctly.
+- **Tool window population crashed off the EDT.** Scan actions added content to
+  the VulnSpeed tool window from a background thread (`ContentManager` is
+  EDT-only); results are now published via `invokeLater`.
 - **Findings in the first 10 columns of a line were silently dropped.**
   Snippet extraction used `minOf(0, column - 10)` instead of `maxOf`, producing
   a negative substring index; the resulting exception aborted the rule's whole

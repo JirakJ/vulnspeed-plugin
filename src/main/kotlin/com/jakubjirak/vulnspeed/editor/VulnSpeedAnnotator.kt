@@ -18,9 +18,13 @@ import java.awt.Font
 
 class VulnSpeedAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
-        val psiFile = element.containingFile ?: return
+        // Annotate on the file node: its text range spans the whole document, so
+        // findings anywhere in the file are valid annotation ranges. Gating on
+        // firstChild instead made every finding outside the first token throw
+        // "Range must be inside element being annotated".
+        if (element !is PsiFile) return
+        val psiFile = element
         val file = psiFile.virtualFile ?: return
-        if (element != psiFile.firstChild) return // Only annotate once per file
 
         // AnnotationHolder is only valid inside this call — annotations must be
         // created synchronously, never from a pooled thread or invokeLater.
