@@ -62,7 +62,7 @@
     <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260610" release-version="20266" optional="true"/>
 
     <change-notes><![CDATA[
-        <h3>2026.6.4 — Internal API removal</h3>
+        <h3>2026.6.5 — Internal API removal</h3>
         <ul>
             <li>Plugin-version lookup no longer calls the internal <code>PluginManager.findEnabledPlugin(PluginId)</code> method — replaced with the public <code>PluginManagerCore.getPlugin(PluginId)</code> API (6 call sites)</li>
         </ul>
