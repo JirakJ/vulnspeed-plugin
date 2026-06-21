@@ -4,6 +4,14 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.6] - 2026-06-21
+
+### Fixed
+- Clean re-release of the 2026.6.5 internal-API fix. Re-verified locally with the
+  IntelliJ Plugin Verifier against IC 2025.1.7 / 2025.2.6.1 / 2025.3 / 2026.1:
+  **0 internal-API usages**, dynamic-plugin eligible, Compatible on all four.
+  (2026.6.5 was uploaded but stuck pending moderation; this supersedes it.)
+
 ## [2026.6.5] - 2026-06-21
 
 ### Fixed
