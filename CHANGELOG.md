@@ -4,6 +4,13 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.3] - 2026-06-21
+
+### Fixed
+- Re-applied removal of internal `PluginManager.findEnabledPlugin(PluginId)` at all
+  6 call sites; replaced with the public `PluginManagerCore.getPlugin(PluginId)` API.
+  The 2026.6.3 working-tree had accidentally reverted the 2026.6.2 fix.
+
 ## [2026.6.2] - 2026-06-10
 
 ### Fixed
