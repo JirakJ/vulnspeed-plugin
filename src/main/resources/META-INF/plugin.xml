@@ -62,10 +62,9 @@
     <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260610" release-version="20266" optional="true"/>
 
     <change-notes><![CDATA[
-        <h3>2026.6.6 — Internal API removal (clean re-release)</h3>
+        <h3>2026.6.7 — Internal API fix (Marketplace review)</h3>
         <ul>
-            <li>Plugin-version lookup no longer calls the internal <code>PluginManager.findEnabledPlugin(PluginId)</code> method — replaced with the public <code>PluginManagerCore.getPlugin(PluginId)</code> API (6 call sites)</li>
-            <li>Re-verified build: 0 internal-API usages against IntelliJ 2025.1 – 2026.1</li>
+            <li>Plugin-version lookup now uses the public <code>PluginManager.getPluginByClass()</code> API at all 6 call sites — no more plugin-by-ID lookup (<code>getPlugin</code> / <code>findEnabledPlugin</code>), which the Marketplace review flagged as internal and warned may start returning null</li>
         </ul>
         <h3>2026.6.1 — Platform API cleanup</h3>
         <ul>

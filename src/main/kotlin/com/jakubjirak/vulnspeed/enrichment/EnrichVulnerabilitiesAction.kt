@@ -4,7 +4,6 @@
  */
 package com.jakubjirak.vulnspeed.enrichment
 
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -12,7 +11,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -100,8 +98,7 @@ class EnrichVulnerabilitiesAction : AnAction() {
     }
 
     private fun pluginVersion(): String {
-        val id = PluginId.getId("com.jakubjirak.vulnspeed")
-        return PluginManagerCore.getPlugin(id)?.version ?: "unknown"
+        return com.intellij.ide.plugins.PluginManager.getPluginByClass(javaClass)?.version ?: "unknown"
     }
 
     private fun notify(project: Project, title: String, message: String, type: NotificationType) {

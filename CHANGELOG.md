@@ -4,6 +4,15 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.6.7] - 2026-06-22
+
+### Fixed
+- Plugin-version lookup migrated from the plugin-by-ID lookups (`PluginManagerCore.getPlugin` /
+  `PluginManager.findEnabledPlugin` — flagged as internal API by JetBrains Marketplace review,
+  warned it "may start returning null any time soon") to the public, by-class
+  `PluginManager.getPluginByClass(javaClass)` at all 6 call sites. Bytecode verified:
+  0 references to the by-ID lookups.
+
 ## [2026.6.6] - 2026-06-21
 
 ### Fixed
