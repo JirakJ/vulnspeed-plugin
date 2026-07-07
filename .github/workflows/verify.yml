@@ -11,3 +11,4 @@ jobs:
     uses: JirakJ/intellij-plugin-verifier/.github/workflows/verify-plugin.yml@master
     with:
       gradle-plugin-version: "2.x"
+      runner-label: "rpi"
