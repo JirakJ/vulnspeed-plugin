@@ -4,7 +4,6 @@ import com.jakubjirak.vulnspeed.model.*
 
 /**
  * Taint analysis for tracking data flow from sources to sinks
- * Premium feature for Professional and Enterprise tiers
  */
 class TaintAnalyzer {
     

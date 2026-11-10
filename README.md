@@ -1,5 +1,9 @@
 # VulnSpeed SAST
 
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE) ![Version](https://img.shields.io/badge/version-2026.8.0-green)
+
+> **Free & open source.** Since 2026.8.0 the plugin is completely free — every feature is unlocked for everyone, no license needed — and the source code is available under the Apache License 2.0.
+
 GPU-accelerated static application security testing (SAST) plugin for JetBrains IDEs. Real-time vulnerability detection across Java, Kotlin, Python, C/C++, JavaScript, TypeScript, and Swift with OWASP Top 10 and CWE Top 25 coverage.
 
 ## Screenshots
@@ -198,10 +202,6 @@ Exit codes: `0` success, `1` fatal error, `2` severity policy tripped.
 ./gradlew buildPlugin
 ```
 
-## License
-
-Copyright © 2026 Jakub Jirák. All rights reserved.
-
 ## SARIF Report Export
 
 VulnSpeed can export its scan results as a **SARIF 2.1.0** report — the
@@ -280,3 +280,11 @@ curl -X POST \
   -F "bom=@vulnspeed-sbom.cdx.json" \
   https://dtrack.example.com/api/v1/bom
 ```
+
+## Contributing
+
+Issues and pull requests are welcome at https://github.com/JirakJ/vulnspeed-plugin.
+
+## License
+
+Copyright 2026 Jakub Jirák. Licensed under the [Apache License, Version 2.0](LICENSE).

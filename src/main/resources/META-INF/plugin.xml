@@ -50,7 +50,7 @@
   <li>IntelliJ IDEA 2025.1+ (or any JetBrains IDE)</li>
   <li>JDK 17+</li>
   <li>2 GB free RAM</li>
-  <li>GPU optional (Metal, CUDA, or Vulkan for Pro acceleration)</li>
+  <li>GPU optional (Metal, CUDA, or Vulkan for GPU acceleration)</li>
 </ul>
 
 <h3>Support</h3>
@@ -59,9 +59,10 @@
   <li><a href="https://github.com/JirakJ/vulnspeed-plugin">Documentation</a></li>
 </ul>]]></description>
 
-    <product-descriptor code="PVULNSPEEDGPUAC" release-date="20260610" release-version="20266" optional="true"/>
 
     <change-notes><![CDATA[
+<h3>2026.8.0</h3><ul><li>The plugin is now completely free — all features unlocked, no license needed.</li><li>Source code is now open source under Apache-2.0: https://github.com/JirakJ/vulnspeed-plugin</li></ul>
+
         <h3>2026.6.7 — Internal API fix (Marketplace review)</h3>
         <ul>
             <li>Plugin-version lookup now uses the public <code>PluginManager.getPluginByClass()</code> API at all 6 call sites — no more plugin-by-ID lookup (<code>getPlugin</code> / <code>findEnabledPlugin</code>), which the Marketplace review flagged as internal and warned may start returning null</li>
@@ -158,9 +159,6 @@
 
         <applicationService
             serviceImplementation="com.jakubjirak.vulnspeed.core.VulnSpeedEngine"/>
-
-        <applicationService
-            serviceImplementation="com.jakubjirak.vulnspeed.licensing.FreemiumGate"/>
 
         <projectService
             serviceImplementation="com.jakubjirak.vulnspeed.report.LastScanResultHolder"/>
