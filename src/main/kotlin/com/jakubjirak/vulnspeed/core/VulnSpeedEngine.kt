@@ -900,7 +900,7 @@ class VulnSpeedEngine : AutoCloseable {
                 pattern = """@RequestBody.*(?!@Valid|@Validated).*User""",
             ),
             
-            // ADDITIONAL PREMIUM RULES - Java/Kotlin Specific
+            // ADDITIONAL RULES - Java/Kotlin Specific
             Rule(
                 id = "REFLECT_001",
                 name = "Unsafe Reflection Usage",

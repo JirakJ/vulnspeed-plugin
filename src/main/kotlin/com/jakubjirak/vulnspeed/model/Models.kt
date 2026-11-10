@@ -27,7 +27,7 @@ enum class VulnerabilityType {
     HARDCODED_CREDENTIALS,
     INSECURE_RANDOMNESS,
     INFORMATION_DISCLOSURE,
-    // New types for Premium Features v2025.5.0
+    // New types for v2025.5.0 features
     CODE_INJECTION,
     SENSITIVE_DATA_EXPOSURE,
     SECURITY_MISCONFIGURATION,

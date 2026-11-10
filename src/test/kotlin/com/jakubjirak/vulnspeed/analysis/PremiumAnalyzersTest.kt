@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Jakub Jirák. All rights reserved.
- * Licensed under the proprietary license. See LICENSE for details.
+ * Copyright (c) 2025 Jakub Jirák.
+ * Licensed under the Apache License, Version 2.0. See LICENSE for details.
  */
 package com.jakubjirak.vulnspeed.analysis
 

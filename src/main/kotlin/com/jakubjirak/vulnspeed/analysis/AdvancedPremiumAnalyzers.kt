@@ -4,7 +4,7 @@ import com.jakubjirak.vulnspeed.model.*
 import java.util.UUID
 
 /**
- * Advanced Premium Analyzers - v2025.6.0 Features
+ * Advanced analyzers - v2025.6.0 features
  * New advanced security analysis capabilities for Professional and Enterprise tiers
  */
 object AdvancedPremiumAnalyzers {

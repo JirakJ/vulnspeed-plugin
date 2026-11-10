@@ -64,7 +64,7 @@ intellijPlatform {
 
         vendor {
             name = "Jakub Jirák"
-            url = "https://github.com/jakubjirak"
+            url = "https://github.com/JirakJ/vulnspeed-plugin"
         }
     }
 
@@ -102,6 +102,7 @@ tasks {
 detekt {
     config.setFrom(files("detekt.yml"))
     buildUponDefaultConfig = true
+    baseline = file("detekt-baseline.xml")
 }
 
 tasks.register<proguard.gradle.ProGuardTask>("obfuscate") {

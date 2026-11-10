@@ -4,6 +4,12 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [2026.8.0] - 2026-11-10
+
+### Changed
+- The plugin is now completely free — all features unlocked, no license needed.
+- Source code is now open source under the Apache License 2.0: https://github.com/JirakJ/vulnspeed-plugin
+
 ## [2026.6.7] - 2026-06-22
 
 ### Fixed
