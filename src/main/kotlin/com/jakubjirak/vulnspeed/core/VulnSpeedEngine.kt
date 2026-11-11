@@ -1,6 +1,7 @@
 package com.jakubjirak.vulnspeed.core
 
 import com.jakubjirak.vulnspeed.model.*
+import com.jakubjirak.vulnspeed.settings.VulnSpeedAppSettings
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
@@ -21,36 +22,44 @@ class VulnSpeedEngine : AutoCloseable {
     private val patternRules = loadDefaultRules()
     
     fun scanFile(file: VirtualFile, project: Project): ScanResult {
-        val scanId = UUID.randomUUID().toString()
         val startTime = System.currentTimeMillis()
-        
+        val maxFileSizeKb = configuredMaxFileSizeKb()
+        // Cheap pre-check on the on-disk size before loading the document text.
+        if (ScanPolicy.isTooLarge(file.length, maxFileSizeKb)) {
+            return emptyResult(UUID.randomUUID().toString(), startTime)
+        }
         val content = ApplicationManager.getApplication().runReadAction(Computable {
             FileDocumentManager.getInstance().getDocument(file)?.text
-        }) ?: run {
-            return ScanResult(
-                scanId = scanId,
-                timestamp = System.currentTimeMillis(),
-                durationMs = System.currentTimeMillis() - startTime,
-                vulnerabilities = emptyList(),
-                stats = ScanStats(0, 0, 0, 0, 0, 0, 0)
-            )
+        }) ?: return emptyResult(UUID.randomUUID().toString(), startTime)
+
+        return scanContent(content, file.path, detectLanguage(file), maxFileSizeKb)
+    }
+
+    /**
+     * Scans [content] with every enabled rule. Content larger than [maxFileSizeKb]
+     * (the "Max file size" setting) is skipped and reported as 0 files scanned.
+     */
+    internal fun scanContent(content: String, filePath: String, language: String, maxFileSizeKb: Int): ScanResult {
+        val scanId = UUID.randomUUID().toString()
+        val startTime = System.currentTimeMillis()
+        if (ScanPolicy.isTooLarge(content.length.toLong(), maxFileSizeKb)) {
+            return emptyResult(scanId, startTime)
         }
-        
+
         val linesOfCode = content.lines().size.toLong()
-        
+
         val vulnerabilities = mutableListOf<Vulnerability>()
-        val language = detectLanguage(file)
-        
+
         // Run pattern matching
         for (rule in patternRules.filter { it.enabled }) {
             vulnerabilities.addAll(
-                scanWithRule(content, file.path, rule, language)
+                scanWithRule(content, filePath, rule, language)
             )
         }
-        
+
         // Sort by severity and line number
         vulnerabilities.sortWith(compareBy({ it.severity.ordinal }, { it.line }))
-        
+
         val endTime = System.currentTimeMillis()
         val result = ScanResult(
             scanId = scanId,
@@ -67,11 +76,15 @@ class VulnSpeedEngine : AutoCloseable {
                 linesOfCode = linesOfCode
             )
         )
-        
+
         scanResults[scanId] = result
         return result
     }
-    
+
+    private fun configuredMaxFileSizeKb(): Int =
+        runCatching { VulnSpeedAppSettings.getInstance().maxFileSizeKb }
+            .getOrDefault(ScanPolicy.DEFAULT_MAX_FILE_SIZE_KB)
+
     fun scanProject(project: Project): ScanResult {
         val scanId = UUID.randomUUID().toString()
         val startTime = System.currentTimeMillis()
@@ -89,7 +102,7 @@ class VulnSpeedEngine : AutoCloseable {
                 synchronized(allVulnerabilities) {
                     allVulnerabilities.addAll(result.vulnerabilities)
                     totalLoc += result.stats.linesOfCode
-                    filesScanned++
+                    filesScanned += result.stats.filesScanned
                 }
             } catch (e: Exception) {
                 LOG.warn("VulnSpeed failed to scan ${file.path}: ${e.message}")
@@ -766,7 +779,7 @@ class VulnSpeedEngine : AutoCloseable {
         if (!dir.isDirectory || dir.name.startsWith(".")) return
         
         dir.listFiles()?.forEach { file ->
-            if (file.isFile && isSupportedFile(file.name)) {
+            if (file.isFile && ScanPolicy.isSupportedFile(file.name)) {
                 val vFile = com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByIoFile(file)
                 if (vFile != null) files.add(vFile)
             } else if (file.isDirectory && !file.name.startsWith(".") && file.name != "node_modules" && file.name != "build") {
@@ -775,10 +788,6 @@ class VulnSpeedEngine : AutoCloseable {
         }
     }
     
-    private fun isSupportedFile(filename: String): Boolean {
-        val ext = filename.substringAfterLast('.')
-        return ext in listOf("java", "kt", "py", "js", "ts", "swift", "cpp", "c", "h", "go", "rs")
-    }
     
     
     private fun loadDefaultRules(): List<Rule> {
@@ -3377,3 +3386,12 @@ class VulnSpeedEngine : AutoCloseable {
         }
     }
 }
+
+/** Result for a file that was not scanned (no document, or above the max file size). */
+private fun emptyResult(scanId: String, startTime: Long): ScanResult = ScanResult(
+    scanId = scanId,
+    timestamp = System.currentTimeMillis(),
+    durationMs = System.currentTimeMillis() - startTime,
+    vulnerabilities = emptyList(),
+    stats = ScanStats(0, 0, 0, 0, 0, 0, 0)
+)

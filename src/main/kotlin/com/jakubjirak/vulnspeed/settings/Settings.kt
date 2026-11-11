@@ -13,6 +13,7 @@ import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import com.jakubjirak.vulnspeed.core.ScanPolicy
 
 @State(
     name = "VulnSpeedAppSettings",
@@ -21,17 +22,13 @@ import com.intellij.ui.dsl.builder.panel
 @Service
 class VulnSpeedAppSettings : PersistentStateComponent<VulnSpeedAppSettings> {
     var enableRealTimeScanning = true
-    var enableAutoFix = true
-    var maxFileSizeKb = 1000
-    var enableTelemetry = false
+    var maxFileSizeKb = ScanPolicy.DEFAULT_MAX_FILE_SIZE_KB
 
     override fun getState(): VulnSpeedAppSettings = this
 
     override fun loadState(state: VulnSpeedAppSettings) {
         this.enableRealTimeScanning = state.enableRealTimeScanning
-        this.enableAutoFix = state.enableAutoFix
         this.maxFileSizeKb = state.maxFileSizeKb
-        this.enableTelemetry = state.enableTelemetry
     }
 
     companion object {
@@ -55,12 +52,7 @@ class VulnSpeedAppConfigurable : BoundConfigurable("VulnSpeed") {
                 row {
                     checkBox("Enable real-time scanning")
                         .bindSelected(settings::enableRealTimeScanning)
-                        .comment("Scan files for vulnerabilities as you type")
-                }
-                row {
-                    checkBox("Enable auto-fix suggestions")
-                        .bindSelected(settings::enableAutoFix)
-                        .comment("Offer one-click remediation via Alt+Enter")
+                        .comment("Highlight vulnerabilities in the editor as you type")
                 }
             }
             group("Performance") {
@@ -71,14 +63,7 @@ class VulnSpeedAppConfigurable : BoundConfigurable("VulnSpeed") {
                         .gap(com.intellij.ui.dsl.builder.RightGap.SMALL)
                     @Suppress("DialogTitleCapitalization")
                     label("KB")
-                }.rowComment("Files larger than this are skipped during scanning")
-            }
-            group("Privacy") {
-                row {
-                    checkBox("Send anonymous usage telemetry")
-                        .bindSelected(settings::enableTelemetry)
-                        .comment("Helps improve detection quality. No source code ever leaves your machine.")
-                }
+                }.rowComment("Files larger than this are skipped by editor highlighting, file, project and on-save scans")
             }
         }
     }
@@ -90,16 +75,12 @@ class VulnSpeedAppConfigurable : BoundConfigurable("VulnSpeed") {
 )
 @Service(Service.Level.PROJECT)
 class VulnSpeedProjectSettings : PersistentStateComponent<VulnSpeedProjectSettings> {
-    var excludePatterns = listOf("**/node_modules/**", "**/build/**", "**/.git/**")
     var scanOnSave = false
-    var autoFixOnSave = false
 
     override fun getState(): VulnSpeedProjectSettings = this
 
     override fun loadState(state: VulnSpeedProjectSettings) {
-        this.excludePatterns = state.excludePatterns
         this.scanOnSave = state.scanOnSave
-        this.autoFixOnSave = state.autoFixOnSave
     }
 
     companion object {
@@ -123,12 +104,7 @@ open class VulnSpeedProjectConfigurable(val project: Project) : BoundConfigurabl
                 row {
                     checkBox("Scan changed file on save")
                         .bindSelected(settings::scanOnSave)
-                        .comment("Run a VulnSpeed scan automatically when a file is saved")
-                }
-                row {
-                    checkBox("Apply safe auto-fixes on save")
-                        .bindSelected(settings::autoFixOnSave)
-                        .comment("Automatically apply non-destructive remediation on save")
+                        .comment("Run a VulnSpeed scan automatically when a file is saved; results appear in the VulnSpeed tool window")
                 }
             }
         }

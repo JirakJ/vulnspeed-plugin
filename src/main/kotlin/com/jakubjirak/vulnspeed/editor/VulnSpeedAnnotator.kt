@@ -8,9 +8,10 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.ui.JBColor
+import com.jakubjirak.vulnspeed.core.ScanPolicy
 import com.jakubjirak.vulnspeed.core.VulnSpeedEngine
 import com.jakubjirak.vulnspeed.model.Severity
-import com.jakubjirak.vulnspeed.quickfix.VulnSpeedQuickFix
+import com.jakubjirak.vulnspeed.settings.VulnSpeedAppSettings
 import java.awt.Color
 import java.awt.Font
 
@@ -21,6 +22,9 @@ class VulnSpeedAnnotator : Annotator {
         // firstChild instead made every finding outside the first token throw
         // "Range must be inside element being annotated".
         if (element !is PsiFile) return
+        // "Enable real-time scanning" switches the as-you-type highlighting off entirely;
+        // the max file size limit is enforced by the engine itself.
+        if (!ScanPolicy.shouldAnnotate(VulnSpeedAppSettings.getInstance().enableRealTimeScanning)) return
         val psiFile = element
         val file = psiFile.virtualFile ?: return
 
@@ -74,15 +78,5 @@ class VulnSpeedAnnotator : Annotator {
             append("\n")
             append(vuln.message)
         }
-    }
-}
-
-class DocumentEditorListener : com.intellij.openapi.editor.event.EditorFactoryListener {
-    override fun editorCreated(event: com.intellij.openapi.editor.event.EditorFactoryEvent) {
-        // Could be used for real-time scanning on editor open
-    }
-    
-    override fun editorReleased(event: com.intellij.openapi.editor.event.EditorFactoryEvent) {
-        // Cleanup if needed
     }
 }
