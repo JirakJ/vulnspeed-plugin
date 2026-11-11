@@ -4,6 +4,15 @@ All notable changes to **VulnSpeed** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_order`).
 
+## [Unreleased]
+
+### Changed
+- Plugin description and README now list only features that actually ship: the never-wired
+  GPU acceleration, taint analysis, AI false-positive filtering, custom rules and compliance
+  report claims were removed, together with the unused analyzer classes behind them.
+- Declares K2 Kotlin plugin mode compatibility.
+- HTML report footer no longer claims GPU acceleration.
+
 ## [2026.8.0] - 2026-11-10
 
 ### Changed

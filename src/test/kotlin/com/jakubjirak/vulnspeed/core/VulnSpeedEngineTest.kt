@@ -38,12 +38,12 @@ class VulnSpeedEngineTest {
         return method.invoke(engine, content, filePath, rule, language) as List<Vulnerability>
     }
 
-    private fun invokeGenerateFixSuggestion(engine: VulnSpeedEngine, rule: Rule, codeLine: String): FixSuggestion? {
+    private fun invokeGenerateFixSuggestion(engine: VulnSpeedEngine, rule: Rule): FixSuggestion? {
         val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
-            "generateFixSuggestion", Rule::class.java, String::class.java
+            "generateFixSuggestion", Rule::class.java
         )
         method.isAccessible = true
-        return method.invoke(engine, rule, codeLine) as? FixSuggestion
+        return method.invoke(engine, rule) as? FixSuggestion
     }
 
     private fun invokeIsSupportedFile(engine: VulnSpeedEngine, filename: String): Boolean {
@@ -191,7 +191,7 @@ class VulnSpeedEngineTest {
     fun `generateFixSuggestion returns SQL fix for SQL rule`() {
         val engine = createEngine()
         val rule = Rule("SQL_001", "SQL Injection", "desc", Severity.CRITICAL, 89, "A03", ".*")
-        val fix = invokeGenerateFixSuggestion(engine, rule, "query + input")
+        val fix = invokeGenerateFixSuggestion(engine, rule)
 
         assertNotNull(fix)
         assertEquals("Use Parameterized Queries", fix!!.title)
@@ -202,7 +202,7 @@ class VulnSpeedEngineTest {
     fun `generateFixSuggestion returns XSS fix for XSS rule`() {
         val engine = createEngine()
         val rule = Rule("XSS_001", "XSS", "desc", Severity.HIGH, 79, "A03", ".*")
-        val fix = invokeGenerateFixSuggestion(engine, rule, "innerHTML = input")
+        val fix = invokeGenerateFixSuggestion(engine, rule)
 
         assertNotNull(fix)
         assertEquals("Sanitize User Input", fix!!.title)
@@ -212,7 +212,7 @@ class VulnSpeedEngineTest {
     fun `generateFixSuggestion returns crypto fix for CRYPTO rule`() {
         val engine = createEngine()
         val rule = Rule("CRYPTO_001", "Weak Crypto", "desc", Severity.HIGH, 327, "A02", ".*")
-        val fix = invokeGenerateFixSuggestion(engine, rule, "MD5")
+        val fix = invokeGenerateFixSuggestion(engine, rule)
 
         assertNotNull(fix)
         assertTrue(fix!!.title.contains("Cryptographic"))
@@ -222,7 +222,7 @@ class VulnSpeedEngineTest {
     fun `generateFixSuggestion returns null for unmatched rule prefix`() {
         val engine = createEngine()
         val rule = Rule("UNKNOWN_999", "Unknown", "desc", Severity.LOW, 0, "", ".*")
-        val fix = invokeGenerateFixSuggestion(engine, rule, "some code")
+        val fix = invokeGenerateFixSuggestion(engine, rule)
 
         assertNull(fix)
     }

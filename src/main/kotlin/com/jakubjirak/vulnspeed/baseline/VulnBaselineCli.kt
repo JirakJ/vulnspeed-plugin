@@ -199,7 +199,8 @@ object VulnBaselineCli {
             """
             Usage:
               vulnspeed-baseline --create  --project=<dir> --findings=<file> [--baseline=<file>] [--tool-version=<v>] [--reason=<text>]
-              vulnspeed-baseline --compare --project=<dir> --findings=<file> [--baseline=<file>] [--output=md|json] [--output-file=<file>] [--fail-on=regression|severity:HIGH]
+              vulnspeed-baseline --compare --project=<dir> --findings=<file> [--baseline=<file>] [--output=md|json]
+                                 [--output-file=<file>] [--fail-on=regression|severity:HIGH]
             """.trimIndent()
         )
     }
@@ -252,17 +253,15 @@ object VulnBaselineCli {
                     }
                 }
 
-                if (mode == null) throw IllegalArgumentException("Must specify --create or --compare")
-                val projectPath = project ?: throw IllegalArgumentException("--project is required")
-                if (findings == null) throw IllegalArgumentException("--findings is required")
+                requireNotNull(mode) { "Must specify --create or --compare" }
+                val projectPath = requireNotNull(project) { "--project is required" }
+                requireNotNull(findings) { "--findings is required" }
 
                 return Args(mode, projectPath, findings, baseline, output, outputFile, failOn, toolVersion, reason)
             }
 
             private fun assignMode(existing: Mode?, next: Mode): Mode {
-                if (existing != null && existing != next) {
-                    throw IllegalArgumentException("Cannot combine --create with --compare")
-                }
+                require(existing == null || existing == next) { "Cannot combine --create with --compare" }
                 return next
             }
 

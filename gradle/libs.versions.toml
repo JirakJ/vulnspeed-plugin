@@ -3,7 +3,6 @@ kotlin = "2.1.0"
 intellij-platform = "2.6.0"
 junit = "5.11.4"
 detekt = "1.23.7"
-proguard = "7.6.1"
 
 [libraries]
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }

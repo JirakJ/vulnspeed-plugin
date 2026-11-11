@@ -8,7 +8,7 @@ import com.intellij.ui.content.ContentFactory
 
 class VulnSpeedToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val panel = VulnSpeedResultsPanel(project)
+        val panel = VulnSpeedResultsPanel()
         val content = ContentFactory.getInstance().createContent(panel, "Results", false)
         toolWindow.contentManager.addContent(content)
     }
