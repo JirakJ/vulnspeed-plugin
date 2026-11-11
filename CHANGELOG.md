@@ -6,6 +6,8 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 
 ## [Unreleased]
 
+## [2026.9.0] - 2026-11-11
+
 ### Changed
 - Plugin description and README now list only features that actually ship: the never-wired
   GPU acceleration, taint analysis, AI false-positive filtering, custom rules and compliance
