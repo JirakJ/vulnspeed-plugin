@@ -9,3 +9,5 @@ build
 .DS_Store
 .env
 .intellijPlatform
+*.iml
+out/

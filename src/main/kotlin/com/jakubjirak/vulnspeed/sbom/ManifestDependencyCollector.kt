@@ -237,7 +237,8 @@ class ManifestDependencyCollector {
 
     private companion object {
         private val GRADLE_DEP_REGEX = Regex(
-            """\b(implementation|api|compileOnly|runtimeOnly|testImplementation|testRuntimeOnly|annotationProcessor)\s*\(\s*["']([^"']+)["']\s*\)"""
+            """\b(implementation|api|compileOnly|runtimeOnly|testImplementation|testRuntimeOnly|annotationProcessor)""" +
+                """\s*\(\s*["']([^"']+)["']\s*\)"""
         )
     }
 }

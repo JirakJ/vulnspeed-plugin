@@ -4,7 +4,7 @@
 
 > **Free & open source.** Since 2026.8.0 the plugin is completely free — every feature is unlocked for everyone, no license needed — and the source code is available under the Apache License 2.0.
 
-GPU-accelerated static application security testing (SAST) plugin for JetBrains IDEs. Real-time vulnerability detection across Java, Kotlin, Python, C/C++, JavaScript, TypeScript, and Swift with OWASP Top 10 and CWE Top 25 coverage.
+Static application security testing (SAST) plugin for JetBrains IDEs. Real-time vulnerability detection across Java, Kotlin, Python, C/C++, JavaScript, TypeScript, and Swift with OWASP Top 10 and CWE Top 25 coverage.
 
 ## Screenshots
 
@@ -30,12 +30,7 @@ GPU-accelerated static application security testing (SAST) plugin for JetBrains 
 - **Scan file** — right-click in editor → "Scan File with VulnSpeed" for on-demand analysis
 - **Scan project** — right-click project folder → "Scan Project with VulnSpeed" for full project scanning
 - **VulnSpeed tool window** — bottom panel displaying vulnerability list, statistics, and quick access to fixes
-- **GPU acceleration** — Metal/CUDA/Vulkan accelerated scanning, 50–100x faster than CPU-based SAST
-- **Taint flow analysis** — advanced taint and data flow analysis for tracking vulnerability propagation
-- **AI-powered false positive filtering** — ML-based filtering to reduce noise
-- **Custom security rules** — define organization-specific vulnerability patterns
-- **Team dashboard & metrics** — collaborative security metrics and reporting
-- **Configurable settings** — toggle real-time scanning, auto-fix, max file size, and telemetry preferences
+- **Configurable settings** — toggle real-time scanning, auto-fix suggestions, and the max file size to scan
 
 ## Installation
 
@@ -44,8 +39,7 @@ GPU-accelerated static application security testing (SAST) plugin for JetBrains 
 
 ## Requirements
 
-- IntelliJ IDEA 2023.3+ or any JetBrains IDE (PyCharm, WebStorm, CLion, etc.)
-- JDK 11+ (included with IDE)
+- IntelliJ IDEA 2025.1+ or any JetBrains IDE (PyCharm, WebStorm, CLion, etc.)
 - 2 GB free RAM
 
 ## Configuration

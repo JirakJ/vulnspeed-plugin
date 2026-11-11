@@ -116,7 +116,7 @@ class CveEnrichmentCliTest {
     }
 
     @Test
-    fun `missing findings flag returns 1`(@TempDir tmp: Path) {
+    fun `missing findings flag returns 1`() {
         val stderr = ByteArrayOutputStream()
         val exit = CveEnrichmentCli.run(
             arrayOf("--format=json"),
@@ -128,7 +128,7 @@ class CveEnrichmentCliTest {
     }
 
     @Test
-    fun `unknown flag returns 1`(@TempDir tmp: Path) {
+    fun `unknown flag returns 1`() {
         val stderr = ByteArrayOutputStream()
         val exit = CveEnrichmentCli.run(
             arrayOf("--what=now"),

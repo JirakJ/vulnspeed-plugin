@@ -21,7 +21,8 @@ object SecretsRules {
         Rule(
             id = "SECRET_AWS_001",
             name = "AWS Access Key ID",
-            description = "Hardcoded AWS access key ID detected. Rotate the key and load credentials from the environment or AWS Secrets Manager.",
+            description = "Hardcoded AWS access key ID detected. Rotate the key and load credentials from the environment or AWS " +
+                "Secrets Manager.",
             severity = Severity.CRITICAL,
             cwe = 798,
             owasp = OWASP,
@@ -111,7 +112,8 @@ object SecretsRules {
         Rule(
             id = "SECRET_URL_001",
             name = "Credentials in URL",
-            description = "URL contains embedded username:password credentials. Use a credential provider or config outside source control.",
+            description = "URL contains embedded username:password credentials. Use a credential provider or config outside source " +
+                "control.",
             severity = Severity.HIGH,
             cwe = 798,
             owasp = OWASP,

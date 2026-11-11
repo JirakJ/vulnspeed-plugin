@@ -3,12 +3,12 @@
     <name>VulnSpeed - GPU-Accelerated SAST</name>
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
-    <description><![CDATA[<h2>VulnSpeed — GPU-Accelerated SAST for Real-Time Vulnerability Detection</h2>
+    <description><![CDATA[<h2>VulnSpeed — SAST for Real-Time Vulnerability Detection</h2>
 
 <p>
   Security scanning at the speed of thought. VulnSpeed detects OWASP Top 10 and CWE Top 25
-  vulnerabilities as you type across 7 languages, with one-click auto-fixes and optional
-  GPU acceleration for instant results on large codebases.
+  vulnerabilities as you type across 7 languages, with one-click auto-fixes, a security
+  baseline for differential scans, and SARIF / HTML / CycloneDX exports.
 </p>
 
 <h3>Real-Time Detection</h3>
@@ -35,22 +35,15 @@
   <li><b>Shareable Reports</b> — Export findings as SARIF 2.1.0, CycloneDX SBOM, or a self-contained HTML report</li>
 </ul>
 
-<h3>Advanced Analysis</h3>
+<h3>CI/CD</h3>
 <ul>
-  <li><b>GPU Acceleration</b> — Metal/CUDA/Vulkan accelerated engine, 50-100x faster than CPU scanning</li>
-  <li><b>Taint Analysis</b> — Advanced data flow tracking across function boundaries</li>
-  <li><b>AI False Positive Filtering</b> — ML-based filtering to reduce noise</li>
-  <li><b>Custom Security Rules</b> — Define organization-specific vulnerability patterns</li>
-  <li><b>Compliance Reports</b> — Generate SOC 2, HIPAA, and PCI DSS reports</li>
-  <li><b>CI/CD Integration</b> — Run VulnSpeed in your pipeline for gated security checks</li>
+  <li><b>Security Baseline</b> — Snapshot accepted findings and surface only new regressions</li>
+  <li><b>CLI Entry Points</b> — Baseline compare and CVE enrichment runnable in your pipeline for gated security checks</li>
 </ul>
 
 <h3>Requirements</h3>
 <ul>
   <li>IntelliJ IDEA 2025.1+ (or any JetBrains IDE)</li>
-  <li>JDK 17+</li>
-  <li>2 GB free RAM</li>
-  <li>GPU optional (Metal, CUDA, or Vulkan for GPU acceleration)</li>
 </ul>
 
 <h3>Support</h3>
@@ -104,6 +97,10 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="vulnspeed-kotlin.xml">org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <globalInspection

@@ -151,7 +151,7 @@ class VulnSpeedEngine : AutoCloseable {
                             ),
                             confidence = 0.85f,
                             owasp = rule.owasp,
-                            fixSuggestion = generateFixSuggestion(rule, line),
+                            fixSuggestion = generateFixSuggestion(rule),
                             tags = listOf(language, rule.id)
                         )
                     )
@@ -164,12 +164,13 @@ class VulnSpeedEngine : AutoCloseable {
         return vulns
     }
     
-    private fun generateFixSuggestion(rule: Rule, codeLine: String): FixSuggestion? {
+    private fun generateFixSuggestion(rule: Rule): FixSuggestion? {
         return when {
             rule.id.startsWith("SECRET") -> FixSuggestion(
                 title = "Remove Hardcoded Secret",
                 description = "Revoke and rotate the leaked credential, then load it from the environment or a secret manager",
-                code = "// Load from environment:\nString apiKey = System.getenv(\"API_KEY\");\n\n// Or from a secret manager (AWS example):\nGetSecretValueRequest request = new GetSecretValueRequest().withSecretId(\"my-secret\");",
+                code = "// Load from environment:\nString apiKey = System.getenv(\"API_KEY\");\n\n// Or from a secret manager (AWS " +
+                    "example):\nGetSecretValueRequest request = new GetSecretValueRequest().withSecretId(\"my-secret\");",
                 references = listOf(
                     "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html",
                     "https://cwe.mitre.org/data/definitions/798.html"
@@ -178,7 +179,8 @@ class VulnSpeedEngine : AutoCloseable {
             rule.id.startsWith("SQL") -> FixSuggestion(
                 title = "Use Parameterized Queries",
                 description = "Use prepared statements or parameterized queries to prevent SQL injection",
-                code = "PreparedStatement stmt = connection.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nstmt.setInt(1, userId);",
+                code = "PreparedStatement stmt = connection.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nstmt.setInt(1, " +
+                    "userId);",
                 references = listOf("https://owasp.org/www-community/attacks/SQL_Injection")
             )
             rule.id.startsWith("XSS") -> FixSuggestion(
@@ -190,289 +192,455 @@ class VulnSpeedEngine : AutoCloseable {
             rule.id.startsWith("CRYPTO") -> FixSuggestion(
                 title = "Use Strong Cryptographic Algorithms",
                 description = "Use SHA-256, SHA-384, SHA-512 or AES-GCM for encryption",
-                code = "// For hashing:\nMessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n\n// For encryption:\nCipher cipher = Cipher.getInstance(\"AES/GCM/NoPadding\");",
+                code = "// For hashing:\nMessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n\n// For encryption:\nCipher " +
+                    "cipher = Cipher.getInstance(\"AES/GCM/NoPadding\");",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html")
             )
             rule.id.startsWith("CMD") -> FixSuggestion(
                 title = "Avoid Command Injection",
                 description = "Use safe APIs, whitelist input, or use parameterized commands",
-                code = "// Use ProcessBuilder with separate arguments:\nProcessBuilder pb = new ProcessBuilder(\"command\", \"arg1\", sanitizedInput);\n\n// Or validate against whitelist:\nif (!ALLOWED_COMMANDS.contains(command)) throw new SecurityException();",
+                code = "// Use ProcessBuilder with separate arguments:\nProcessBuilder pb = new ProcessBuilder(\"command\", \"arg1\", " +
+                    "sanitizedInput);\n\n// Or validate against whitelist:\nif (!ALLOWED_COMMANDS.contains(command)) throw new " +
+                    "SecurityException();",
                 references = listOf("https://owasp.org/www-community/attacks/Command_Injection")
             )
             rule.id.startsWith("PATH") -> FixSuggestion(
                 title = "Validate and Canonicalize Paths",
                 description = "Use Path.normalize() and validate against base directory",
-                code = "Path basePath = Paths.get(\"/safe/directory\").toRealPath();\nPath userPath = basePath.resolve(userInput).normalize();\nif (!userPath.startsWith(basePath)) {\n    throw new SecurityException(\"Path traversal detected\");\n}",
+                code = "Path basePath = Paths.get(\"/safe/directory\").toRealPath();\nPath userPath = " +
+                    "basePath.resolve(userInput).normalize();\nif (!userPath.startsWith(basePath)) {\n    throw new " +
+                    "SecurityException(\"Path traversal detected\");\n}",
                 references = listOf("https://owasp.org/www-community/attacks/Path_Traversal")
             )
             rule.id.startsWith("DESER") -> FixSuggestion(
                 title = "Validate Before Deserialization",
                 description = "Use safe serialization formats (JSON) or implement ObjectInputFilter",
-                code = "// Use JSON instead:\nGson gson = new Gson();\nMyClass obj = gson.fromJson(jsonString, MyClass.class);\n\n// Or use ObjectInputFilter (Java 9+):\nObjectInputFilter filter = ObjectInputFilter.Config.createFilter(\"com.myapp.**;!*\");",
+                code = "// Use JSON instead:\nGson gson = new Gson();\nMyClass obj = gson.fromJson(jsonString, MyClass.class);\n\n// Or " +
+                    "use ObjectInputFilter (Java 9+):\nObjectInputFilter filter = " +
+                    "ObjectInputFilter.Config.createFilter(\"com.myapp.**;!*\");",
                 references = listOf("https://owasp.org/www-community/vulnerabilities/Deserialization_of_untrusted_data")
             )
             rule.id.startsWith("XXE") -> FixSuggestion(
                 title = "Disable XXE in XML Parser",
                 description = "Disable external entity processing in XML parsers",
-                code = "DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\ndbf.setFeature(\"http://xml.org/sax/features/external-general-entities\", false);\ndbf.setFeature(\"http://xml.org/sax/features/external-parameter-entities\", false);",
+                code = "DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\n" +
+                    "dbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\n" +
+                    "dbf.setFeature(\"http://xml.org/sax/features/external-general-entities\", false);\n" +
+                    "dbf.setFeature(\"http://xml.org/sax/features/external-parameter-entities\", false);",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html")
             )
             rule.id.startsWith("SSRF") -> FixSuggestion(
                 title = "Validate URLs Against Whitelist",
                 description = "Validate and restrict URLs to trusted domains only",
-                code = "URI uri = new URI(userUrl);\nString host = uri.getHost();\nif (!ALLOWED_HOSTS.contains(host)) {\n    throw new SecurityException(\"Untrusted host: \" + host);\n}",
-                references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html")
+                code = "URI uri = new URI(userUrl);\nString host = uri.getHost();\nif (!ALLOWED_HOSTS.contains(host)) {\n    throw new " +
+                    "SecurityException(\"Untrusted host: \" + host);\n}",
+                references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.ht" +
+                    "ml")
             )
             rule.id.startsWith("CSRF") -> FixSuggestion(
                 title = "Enable CSRF Protection",
                 description = "Use CSRF tokens for state-changing operations",
-                code = "// Spring Security:\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) {\n        http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());\n    }\n}",
+                code = "// Spring Security:\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public " +
+                    "SecurityFilterChain filterChain(HttpSecurity http) {\n        " +
+                    "http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());\n    }\n}",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html")
             )
             rule.id.startsWith("JWT") -> FixSuggestion(
                 title = "Use Strong JWT Signature",
                 description = "Use HS256, RS256, or ES256 with strong keys",
-                code = "// Use strong signing algorithm:\nString token = Jwts.builder()\n    .setSubject(username)\n    .signWith(SignatureAlgorithm.HS256, secretKey) // Use strong key\n    .compact();",
+                code = "// Use strong signing algorithm:\nString token = Jwts.builder()\n    .setSubject(username)\n    " +
+                    ".signWith(SignatureAlgorithm.HS256, secretKey) // Use strong key\n    .compact();",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html")
             )
             rule.id.startsWith("COOKIE") -> FixSuggestion(
                 title = "Set Secure Cookie Flags",
                 description = "Always set Secure and HttpOnly flags on sensitive cookies",
-                code = "Cookie cookie = new Cookie(\"session\", sessionId);\ncookie.setSecure(true); // HTTPS only\ncookie.setHttpOnly(true); // No JavaScript access\ncookie.setSameSite(\"Strict\"); // CSRF protection",
+                code = "Cookie cookie = new Cookie(\"session\", sessionId);\ncookie.setSecure(true); // HTTPS only\n" +
+                    "cookie.setHttpOnly(true); // No JavaScript access\ncookie.setSameSite(\"Strict\"); // CSRF protection",
                 references = listOf("https://owasp.org/www-community/controls/SecureCookieAttribute")
             )
             rule.id.startsWith("CORS") -> FixSuggestion(
                 title = "Restrict CORS Origins",
                 description = "Use specific allowed origins instead of wildcard",
-                code = "@CrossOrigin(origins = \"https://trusted-domain.com\")\n// OR\nresponse.setHeader(\"Access-Control-Allow-Origin\", \"https://trusted-domain.com\");",
+                code = "@CrossOrigin(origins = \"https://trusted-domain.com\")\n// OR\n" +
+                    "response.setHeader(\"Access-Control-Allow-Origin\", \"https://trusted-domain.com\");",
                 references = listOf("https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS")
             )
             rule.id.startsWith("REFLECT") || rule.id.startsWith("SCRIPT") || rule.id.startsWith("EXPR") -> FixSuggestion(
                 title = "Avoid Dynamic Code Execution",
                 description = "Never execute user-controlled code. Use whitelist approach.",
-                code = "// Use whitelist:\nif (!ALLOWED_CLASSES.contains(className)) {\n    throw new SecurityException();\n}\n// Or avoid reflection entirely and use dependency injection",
+                code = "// Use whitelist:\nif (!ALLOWED_CLASSES.contains(className)) {\n    throw new SecurityException();\n}\n// Or " +
+                    "avoid reflection entirely and use dependency injection",
                 references = listOf("https://owasp.org/www-community/attacks/Code_Injection")
             )
             rule.id.startsWith("AUTH") -> FixSuggestion(
                 title = "Implement Strong Authentication",
                 description = "Use industry-standard authentication with proper password hashing",
-                code = "// BCrypt for password hashing:\nBCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);\nString hashedPassword = encoder.encode(plainPassword);\n\n// Spring Security annotation:\n@PreAuthorize(\"hasRole('ADMIN')\")",
+                code = "// BCrypt for password hashing:\nBCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);\nString " +
+                    "hashedPassword = encoder.encode(plainPassword);\n\n// Spring Security annotation:\n" +
+                    "@PreAuthorize(\"hasRole('ADMIN')\")",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html")
             )
             rule.id.startsWith("API") -> FixSuggestion(
                 title = "Secure API Design",
                 description = "Use POST for sensitive data, validate content types, sanitize errors",
-                code = "@PostMapping(value = \"/api/endpoint\", consumes = \"application/json\")\npublic Response handle(@Valid @RequestBody Request req) {\n    try {\n        // business logic\n    } catch (Exception e) {\n        log.error(\"Error\", e);\n        return Response.error(\"An error occurred\"); // Generic message\n    }\n}",
+                code = "@PostMapping(value = \"/api/endpoint\", consumes = \"application/json\")\npublic Response handle(@Valid " +
+                    "@RequestBody Request req) {\n    try {\n        // business logic\n    } catch (Exception e) {\n        " +
+                    "log.error(\"Error\", e);\n        return Response.error(\"An error occurred\"); // Generic message\n    }\n}",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html")
             )
             rule.id.startsWith("DB") -> FixSuggestion(
                 title = "Secure Database Operations",
                 description = "Use parameterized queries, connection pooling, and proper ORM configuration",
-                code = "// Use DataSource with pooling:\n@Bean\npublic DataSource dataSource() {\n    HikariConfig config = new HikariConfig();\n    config.setMaximumPoolSize(10);\n    return new HikariDataSource(config);\n}\n\n// For dynamic tables, use whitelist:\nif (!ALLOWED_TABLES.contains(tableName)) throw new SecurityException();",
+                code = "// Use DataSource with pooling:\n@Bean\npublic DataSource dataSource() {\n    HikariConfig config = new " +
+                    "HikariConfig();\n    config.setMaximumPoolSize(10);\n    return new HikariDataSource(config);\n}\n\n// For " +
+                    "dynamic tables, use whitelist:\nif (!ALLOWED_TABLES.contains(tableName)) throw new SecurityException();",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Query_Parameterization_Cheat_Sheet.html")
             )
             rule.id.startsWith("CLOUD") -> FixSuggestion(
                 title = "Secure Cloud Configuration",
                 description = "Never hardcode credentials. Use environment variables or secret managers.",
-                code = "// Use AWS SDK with IAM roles or environment:\nAWSCredentialsProvider provider = DefaultAWSCredentialsProviderChain.getInstance();\n\n// Or use AWS Secrets Manager:\nGetSecretValueRequest request = new GetSecretValueRequest()\n    .withSecretId(\"my-secret\");",
+                code = "// Use AWS SDK with IAM roles or environment:\nAWSCredentialsProvider provider = " +
+                    "DefaultAWSCredentialsProviderChain.getInstance();\n\n// Or use AWS Secrets Manager:\nGetSecretValueRequest " +
+                    "request = new GetSecretValueRequest()\n    .withSecretId(\"my-secret\");",
                 references = listOf("https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials.html")
             )
             rule.id.startsWith("RESOURCE") || rule.id.startsWith("BUFFER") -> FixSuggestion(
                 title = "Proper Resource Management",
                 description = "Always close resources using try-with-resources (Java 7+)",
-                code = "// Automatically closes resources:\ntry (FileInputStream fis = new FileInputStream(file);\n     BufferedReader br = new BufferedReader(new InputStreamReader(fis))) {\n    // use resources\n} // auto-closed here",
+                code = "// Automatically closes resources:\ntry (FileInputStream fis = new FileInputStream(file);\n     BufferedReader " +
+                    "br = new BufferedReader(new InputStreamReader(fis))) {\n    // use resources\n} // auto-closed here",
                 references = listOf("https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html")
             )
             rule.id.startsWith("INPUT") || rule.id.startsWith("SIZE") -> FixSuggestion(
                 title = "Validate All Input",
                 description = "Use Bean Validation annotations and size limits",
-                code = "public Response handle(\n    @Valid @Size(min=1, max=100) @Pattern(regexp=\"^[a-zA-Z0-9]+$\") String input,\n    @RequestParam @Max(10485760) MultipartFile file) {\n    // validated input\n}",
+                code = "public Response handle(\n    @Valid @Size(min=1, max=100) @Pattern(regexp=\"^[a-zA-Z0-9]+$\") String input,\n   " +
+                    " @RequestParam @Max(10485760) MultipartFile file) {\n    // validated input\n}",
                 references = listOf("https://beanvalidation.org/")
             )
             rule.id.startsWith("RECORD") || rule.id.startsWith("KOTLIN") -> FixSuggestion(
                 title = "Immutable Data Structures",
                 description = "Use immutable collections in records and data classes",
-                code = "// Java Record with immutable list:\npublic record User(String name, List<String> roles) {\n    public User {\n        roles = List.copyOf(roles); // Defensive copy\n    }\n}\n\n// Kotlin data class:\ndata class User(val name: String, val roles: List<String>) // Use List, not MutableList",
+                code = "// Java Record with immutable list:\npublic record User(String name, List<String> roles) {\n    public User {\n " +
+                    "       roles = List.copyOf(roles); // Defensive copy\n    }\n}\n\n// Kotlin data class:\ndata class User(val " +
+                    "name: String, val roles: List<String>) // Use List, not MutableList",
                 references = listOf("https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Record.html")
             )
             rule.id.startsWith("VIRTUAL") -> FixSuggestion(
                 title = "Virtual Thread Best Practices",
                 description = "Avoid synchronized blocks in virtual threads. Use ReentrantLock instead.",
-                code = "// Instead of synchronized:\nprivate final ReentrantLock lock = new ReentrantLock();\n\nThread.ofVirtual().start(() -> {\n    lock.lock();\n    try {\n        // critical section\n    } finally {\n        lock.unlock();\n    }\n});",
+                code = "// Instead of synchronized:\nprivate final ReentrantLock lock = new ReentrantLock();\n\n" +
+                    "Thread.ofVirtual().start(() -> {\n    lock.lock();\n    try {\n        // critical section\n    } finally {\n   " +
+                    "     lock.unlock();\n    }\n});",
                 references = listOf("https://openjdk.org/jeps/444")
             )
             rule.id.startsWith("SPRING") -> FixSuggestion(
                 title = "Secure Spring Configuration",
                 description = "Use Spring Security best practices with proper authentication",
-                code = "@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) {\n        return http\n            .authorizeRequests(auth -> auth\n                .anyRequest().authenticated())\n            .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())\n            .build();\n    }\n}",
+                code = "@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain " +
+                    "filterChain(HttpSecurity http) {\n        return http\n            .authorizeRequests(auth -> auth\n            " +
+                    "    .anyRequest().authenticated())\n            " +
+                    ".csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())\n            .build();\n    }\n}",
                 references = listOf("https://spring.io/guides/topicals/spring-security-architecture")
             )
             rule.id.startsWith("REST") || rule.id.startsWith("GRAPHQL") || rule.id.startsWith("WEBSOCKET") -> FixSuggestion(
                 title = "Secure API Endpoints",
                 description = "Implement pagination, versioning, authentication, and rate limiting",
-                code = "@GetMapping(\"/api/v1/users\")\n@PreAuthorize(\"hasRole('USER')\")\n@RateLimit(value = 100, duration = 1, unit = TimeUnit.MINUTES)\npublic Page<User> getUsers(@PageableDefault(size = 20) Pageable page) {\n    return userService.findAll(page);\n}",
+                code = "@GetMapping(\"/api/v1/users\")\n@PreAuthorize(\"hasRole('USER')\")\n@RateLimit(value = 100, duration = 1, unit " +
+                    "= TimeUnit.MINUTES)\npublic Page<User> getUsers(@PageableDefault(size = 20) Pageable page) {\n    return " +
+                    "userService.findAll(page);\n}",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html")
             )
-            rule.id.startsWith("MICRO") || rule.id.startsWith("KAFKA") || rule.id.startsWith("REDIS") || rule.id.startsWith("RABBIT") -> FixSuggestion(
+            rule.id.startsWith("MICRO") || rule.id.startsWith("KAFKA") || rule.id.startsWith("REDIS") ||
+                rule.id.startsWith("RABBIT") -> FixSuggestion(
                 title = "Secure Microservices Communication",
                 description = "Use mutual TLS, circuit breakers, and proper authentication",
-                code = "@FeignClient(name = \"user-service\", configuration = SecureClientConfig.class)\npublic interface UserClient {\n    @CircuitBreaker(name = \"userService\", fallbackMethod = \"getUserFallback\")\n    User getUser(@PathVariable Long id);\n}\n\n// Enable SSL/TLS:\nspring.kafka.security.protocol=SASL_SSL\nspring.kafka.properties.sasl.mechanism=PLAIN",
+                code = "@FeignClient(name = \"user-service\", configuration = SecureClientConfig.class)\npublic interface UserClient {\n" +
+                    "    @CircuitBreaker(name = \"userService\", fallbackMethod = \"getUserFallback\")\n    User " +
+                    "getUser(@PathVariable Long id);\n}\n\n// Enable SSL/TLS:\nspring.kafka.security.protocol=SASL_SSL\n" +
+                    "spring.kafka.properties.sasl.mechanism=PLAIN",
                 references = listOf("https://microservices.io/patterns/security/access-token.html")
             )
             rule.id.startsWith("MOBILE") || rule.id.startsWith("WEB") -> FixSuggestion(
                 title = "Secure Frontend & Mobile Apps",
                 description = "Implement CSP, SRI, certificate pinning, and secure storage",
-                code = "// Content Security Policy:\n<meta http-equiv=\"Content-Security-Policy\" \n      content=\"default-src 'self'; script-src 'self' https://trusted.cdn.com\">\n\n// Subresource Integrity:\n<script src=\"https://cdn.example.com/lib.js\" \n        integrity=\"sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC\"\n        crossorigin=\"anonymous\"></script>\n\n// iOS Certificate Pinning:\nlet serverTrustPolicy = ServerTrustPolicy.pinCertificates(\n    certificates: ServerTrustPolicy.certificates(),\n    validateCertificateChain: true,\n    validateHost: true\n)",
+                code = "// Content Security Policy:\n<meta http-equiv=\"Content-Security-Policy\" \n      content=\"default-src 'self'; " +
+                    "script-src 'self' https://trusted.cdn.com\">\n\n// Subresource Integrity:\n<script " +
+                    "src=\"https://cdn.example.com/lib.js\" \n        " +
+                    "integrity=\"sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC\"\n        " +
+                    "crossorigin=\"anonymous\"></script>\n\n// iOS Certificate Pinning:\nlet serverTrustPolicy = " +
+                    "ServerTrustPolicy.pinCertificates(\n    certificates: ServerTrustPolicy.certificates(),\n    " +
+                    "validateCertificateChain: true,\n    validateHost: true\n)",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html")
             )
             rule.id.startsWith("CICD") || rule.id.startsWith("K8S") -> FixSuggestion(
                 title = "Secure CI/CD & Kubernetes",
                 description = "Use secrets management, security contexts, and minimal privileges",
-                code = "# Kubernetes Security Context:\napiVersion: v1\nkind: Pod\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n  - name: app\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n\n# Use secrets properly:\nkind: Secret\napiVersion: v1\nmetadata:\n  name: db-credentials\ntype: Opaque\nstringData:\n  password: \${DB_PASSWORD}  # From environment/vault",
+                code = "# Kubernetes Security Context:\napiVersion: v1\nkind: Pod\nspec:\n  securityContext:\n    runAsNonRoot: true\n  " +
+                    "  runAsUser: 1000\n  containers:\n  - name: app\n    securityContext:\n      allowPrivilegeEscalation: false\n  " +
+                    "    readOnlyRootFilesystem: true\n\n# Use secrets properly:\nkind: Secret\napiVersion: v1\nmetadata:\n  name: " +
+                    "db-credentials\ntype: Opaque\nstringData:\n  password: \${DB_PASSWORD}  # From environment/vault",
                 references = listOf("https://kubernetes.io/docs/concepts/security/pod-security-standards/")
             )
             rule.id.startsWith("PYTHON") -> FixSuggestion(
                 title = "Secure Python Code",
                 description = "Avoid pickle, eval, use parameterized queries and environment variables",
-                code = "# Instead of pickle:\nimport json\ndata = json.loads(user_input)\n\n# Instead of eval:\nimport ast\ndata = ast.literal_eval(user_input)  # Safe for literals only\n\n# SQLAlchemy parameterized:\nfrom sqlalchemy import text\nstmt = text(\"SELECT * FROM users WHERE id = :id\")\nresult = session.execute(stmt, {\"id\": user_id})\n\n# Environment variables:\nimport os\nSECRET_KEY = os.environ.get('SECRET_KEY')",
+                code = "# Instead of pickle:\nimport json\ndata = json.loads(user_input)\n\n# Instead of eval:\nimport ast\ndata = " +
+                    "ast.literal_eval(user_input)  # Safe for literals only\n\n# SQLAlchemy parameterized:\nfrom sqlalchemy import " +
+                    "text\nstmt = text(\"SELECT * FROM users WHERE id = :id\")\nresult = session.execute(stmt, {\"id\": user_id})\n\n" +
+                    "# Environment variables:\nimport os\nSECRET_KEY = os.environ.get('SECRET_KEY')",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Python_Security_Cheat_Sheet.html")
             )
             rule.id.startsWith("JS") || rule.id.startsWith("TS") || rule.id.startsWith("NODE") -> FixSuggestion(
                 title = "Secure JavaScript/TypeScript",
                 description = "Use crypto.randomBytes, avoid prototype pollution, sanitize inputs",
-                code = "// Secure random:\nconst crypto = require('crypto');\nconst token = crypto.randomBytes(32).toString('hex');\n\n// Avoid prototype pollution:\nconst obj = Object.create(null);  // No prototype\n// OR validate keys:\nif (Object.hasOwn(obj, key) && key !== '__proto__') {\n    obj[key] = value;\n}\n\n// Express with Helmet:\nconst helmet = require('helmet');\napp.use(helmet());\n\n// MongoDB safe query:\nconst query = { _id: ObjectId(req.params.id) };  // Typed",
+                code = "// Secure random:\nconst crypto = require('crypto');\nconst token = crypto.randomBytes(32).toString('hex');\n\n" +
+                    "// Avoid prototype pollution:\nconst obj = Object.create(null);  // No prototype\n// OR validate keys:\nif " +
+                    "(Object.hasOwn(obj, key) && key !== '__proto__') {\n    obj[key] = value;\n}\n\n// Express with Helmet:\nconst " +
+                    "helmet = require('helmet');\napp.use(helmet());\n\n// MongoDB safe query:\nconst query = { _id: " +
+                    "ObjectId(req.params.id) };  // Typed",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html")
             )
             rule.id.startsWith("ATTACK") -> FixSuggestion(
                 title = "Prevent Advanced Attack Vectors",
                 description = "Validate all inputs, limit resource consumption, check file types",
-                code = "// SSTI Prevention:\nString template = \"static/template.ftl\";  // Use constant templates\n\n// File Upload Security:\nMultipartFile file = ...\nif (!ALLOWED_TYPES.contains(file.getContentType())) {\n    throw new SecurityException();\n}\nif (file.getSize() > MAX_FILE_SIZE) {\n    throw new SecurityException();\n}\n\n// XML Entity Expansion:\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);\ndbf.setExpandEntityReferences(false);",
+                code = "// SSTI Prevention:\nString template = \"static/template.ftl\";  // Use constant templates\n\n// File Upload " +
+                    "Security:\nMultipartFile file = ...\nif (!ALLOWED_TYPES.contains(file.getContentType())) {\n    throw new " +
+                    "SecurityException();\n}\nif (file.getSize() > MAX_FILE_SIZE) {\n    throw new SecurityException();\n}\n\n// XML " +
+                    "Entity Expansion:\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\n" +
+                    "dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);\ndbf.setExpandEntityReferences(false);",
                 references = listOf("https://owasp.org/www-community/attacks/")
             )
-            rule.id.startsWith("GDPR") || rule.id.startsWith("PCI") || rule.id.startsWith("HIPAA") || rule.id.startsWith("PRIVACY") -> FixSuggestion(
+            rule.id.startsWith("GDPR") || rule.id.startsWith("PCI") || rule.id.startsWith("HIPAA") ||
+                rule.id.startsWith("PRIVACY") -> FixSuggestion(
                 title = "Compliance & Data Privacy",
                 description = "Encrypt sensitive data, implement audit logs, mask PII in logs",
-                code = "// Encrypt sensitive data:\n@Convert(converter = EncryptedStringConverter.class)\nprivate String socialSecurityNumber;\n\n// Audit logging:\n@PostUpdate\nprivate void auditUpdate() {\n    auditLog.log(\"User updated\", userId, LocalDateTime.now());\n}\n\n// Mask PII in logs:\nlog.info(\"Processing user: {}\" + maskEmail(user.getEmail()));\n\n// Data retention:\n@PrePersist\nprivate void setExpiry() {\n    this.expiresAt = LocalDateTime.now().plusDays(RETENTION_DAYS);\n}",
+                code = "// Encrypt sensitive data:\n@Convert(converter = EncryptedStringConverter.class)\nprivate String " +
+                    "socialSecurityNumber;\n\n// Audit logging:\n@PostUpdate\nprivate void auditUpdate() {\n    auditLog.log(\"User " +
+                    "updated\", userId, LocalDateTime.now());\n}\n\n// Mask PII in logs:\nlog.info(\"Processing user: {}\" + " +
+                    "maskEmail(user.getEmail()));\n\n// Data retention:\n@PrePersist\nprivate void setExpiry() {\n    this.expiresAt " +
+                    "= LocalDateTime.now().plusDays(RETENTION_DAYS);\n}",
                 references = listOf("https://gdpr.eu/", "https://www.pcisecuritystandards.org/")
             )
             rule.id.startsWith("QUALITY") -> FixSuggestion(
                 title = "Code Quality & Security Best Practices",
                 description = "Use proper logging, avoid magic numbers, handle exceptions",
-                code = "// Proper logging:\nprivate static final Logger log = LoggerFactory.getLogger(MyClass.class);\nlog.error(\"Error processing request\", exception);\n\n// Constants:\nprivate static final int PBKDF2_ITERATIONS = 100000;\nprivate static final int AES_KEY_SIZE = 256;\n\n// Exception handling:\ntry {\n    // risky operation\n} catch (SpecificException e) {\n    log.error(\"Failed\", e);\n    throw new BusinessException(\"Operation failed\", e);\n}",
+                code = "// Proper logging:\nprivate static final Logger log = LoggerFactory.getLogger(MyClass.class);\n" +
+                    "log.error(\"Error processing request\", exception);\n\n// Constants:\nprivate static final int " +
+                    "PBKDF2_ITERATIONS = 100000;\nprivate static final int AES_KEY_SIZE = 256;\n\n// Exception handling:\ntry {\n    " +
+                    "// risky operation\n} catch (SpecificException e) {\n    log.error(\"Failed\", e);\n    throw new " +
+                    "BusinessException(\"Operation failed\", e);\n}",
                 references = listOf("https://rules.sonarsource.com/java/")
             )
             rule.id.startsWith("CRYPTO_0") || rule.id.startsWith("ENCODING") || rule.id.startsWith("HASH") -> FixSuggestion(
                 title = "Strong Cryptography",
                 description = "Use proper key sizes, unique IVs, salted password hashing",
-                code = "// RSA Key Generation (2048+ bits):\nKeyPairGenerator kpg = KeyPairGenerator.getInstance(\"RSA\");\nkpg.initialize(2048);\n\n// AES with random IV:\nSecureRandom sr = new SecureRandom();\nbyte[] iv = new byte[16];\nsr.nextBytes(iv);\nIvParameterSpec ivSpec = new IvParameterSpec(iv);\n\n// PBKDF2 with salt:\nSecureRandom random = new SecureRandom();\nbyte[] salt = new byte[16];\nrandom.nextBytes(salt);\nPBEKeySpec spec = new PBEKeySpec(password, salt, 100000, 256);\nSecretKeyFactory factory = SecretKeyFactory.getInstance(\"PBKDF2WithHmacSHA256\");\nbyte[] hash = factory.generateSecret(spec).getEncoded();",
+                code = "// RSA Key Generation (2048+ bits):\nKeyPairGenerator kpg = KeyPairGenerator.getInstance(\"RSA\");\n" +
+                    "kpg.initialize(2048);\n\n// AES with random IV:\nSecureRandom sr = new SecureRandom();\nbyte[] iv = new " +
+                    "byte[16];\nsr.nextBytes(iv);\nIvParameterSpec ivSpec = new IvParameterSpec(iv);\n\n// PBKDF2 with salt:\n" +
+                    "SecureRandom random = new SecureRandom();\nbyte[] salt = new byte[16];\nrandom.nextBytes(salt);\nPBEKeySpec " +
+                    "spec = new PBEKeySpec(password, salt, 100000, 256);\nSecretKeyFactory factory = " +
+                    "SecretKeyFactory.getInstance(\"PBKDF2WithHmacSHA256\");\nbyte[] hash = " +
+                    "factory.generateSecret(spec).getEncoded();",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html")
             )
             rule.id.startsWith("NET") -> FixSuggestion(
                 title = "Secure Network Communication",
                 description = "Use encrypted protocols, verify hostnames, set timeouts",
-                code = "// SFTP instead of FTP:\nJSch jsch = new JSch();\nSession session = jsch.getSession(user, host, 22);\nsession.setConfig(\"StrictHostKeyChecking\", \"yes\");\n\n// SMTP with TLS:\nprops.put(\"mail.smtp.starttls.enable\", \"true\");\nprops.put(\"mail.smtp.ssl.enable\", \"true\");\n\n// Socket timeout:\nSocket socket = new Socket();\nsocket.connect(new InetSocketAddress(host, port), 5000);\nsocket.setSoTimeout(10000);\n\n// WebSocket secure:\nURI uri = new URI(\"wss://secure.example.com/ws\");",
+                code = "// SFTP instead of FTP:\nJSch jsch = new JSch();\nSession session = jsch.getSession(user, host, 22);\n" +
+                    "session.setConfig(\"StrictHostKeyChecking\", \"yes\");\n\n// SMTP with TLS:\n" +
+                    "props.put(\"mail.smtp.starttls.enable\", \"true\");\nprops.put(\"mail.smtp.ssl.enable\", \"true\");\n\n// " +
+                    "Socket timeout:\nSocket socket = new Socket();\nsocket.connect(new InetSocketAddress(host, port), 5000);\n" +
+                    "socket.setSoTimeout(10000);\n\n// WebSocket secure:\nURI uri = new URI(\"wss://secure.example.com/ws\");",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html")
             )
             rule.id.startsWith("AUTHZ") || rule.id.startsWith("BUSINESS") -> FixSuggestion(
                 title = "Authorization & Business Logic Security",
                 description = "Implement row-level security, validate ownership, atomic operations",
-                code = "// Row-level security:\n@Where(clause = \"tenant_id = :currentTenantId\")\n@Entity\npublic class Document {\n    // ...\n}\n\n// Ownership validation:\npublic Document getDocument(Long id) {\n    Document doc = repository.findById(id).orElseThrow();\n    if (!doc.getOwnerId().equals(currentUser.getId())) {\n        throw new AccessDeniedException();\n    }\n    return doc;\n}\n\n// Atomic financial transaction:\n@Transactional(isolation = Isolation.SERIALIZABLE)\npublic void transfer(Account from, Account to, BigDecimal amount) {\n    from.setBalance(from.getBalance().subtract(amount));\n    to.setBalance(to.getBalance().add(amount));\n}",
+                code = "// Row-level security:\n@Where(clause = \"tenant_id = :currentTenantId\")\n@Entity\npublic class Document {\n   " +
+                    " // ...\n}\n\n// Ownership validation:\npublic Document getDocument(Long id) {\n    Document doc = " +
+                    "repository.findById(id).orElseThrow();\n    if (!doc.getOwnerId().equals(currentUser.getId())) {\n        throw " +
+                    "new AccessDeniedException();\n    }\n    return doc;\n}\n\n// Atomic financial transaction:\n" +
+                    "@Transactional(isolation = Isolation.SERIALIZABLE)\npublic void transfer(Account from, Account to, BigDecimal " +
+                    "amount) {\n    from.setBalance(from.getBalance().subtract(amount));\n    " +
+                    "to.setBalance(to.getBalance().add(amount));\n}",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html")
             )
-            rule.id.startsWith("REACT") || rule.id.startsWith("ANGULAR") || rule.id.startsWith("VUE") || rule.id.startsWith("NEXTJS") -> FixSuggestion(
+            rule.id.startsWith("REACT") || rule.id.startsWith("ANGULAR") || rule.id.startsWith("VUE") ||
+                rule.id.startsWith("NEXTJS") -> FixSuggestion(
                 title = "Modern Framework Security",
                 description = "Proper state management, input validation, sanitization",
-                code = "// React safe state:\nthis.setState({ value: newValue });\n\n// React with DOMPurify:\nimport DOMPurify from 'dompurify';\nconst clean = DOMPurify.sanitize(userInput);\n<div dangerouslySetInnerHTML={{ __html: clean }} />\n\n// Angular sanitizer:\nconstructor(private sanitizer: DomSanitizer) {}\nthis.safeHtml = this.sanitizer.sanitize(SecurityContext.HTML, userHtml);\n\n// Next.js API auth:\nexport default async function handler(req, res) {\n  const session = await getSession({ req });\n  if (!session) return res.status(401).json({ error: 'Unauthorized' });\n  // ...\n}",
+                code = "// React safe state:\nthis.setState({ value: newValue });\n\n// React with DOMPurify:\nimport DOMPurify from " +
+                    "'dompurify';\nconst clean = DOMPurify.sanitize(userInput);\n<div dangerouslySetInnerHTML={{ __html: clean }} " +
+                    "/>\n\n// Angular sanitizer:\nconstructor(private sanitizer: DomSanitizer) {}\nthis.safeHtml = " +
+                    "this.sanitizer.sanitize(SecurityContext.HTML, userHtml);\n\n// Next.js API auth:\nexport default async function " +
+                    "handler(req, res) {\n  const session = await getSession({ req });\n  if (!session) return " +
+                    "res.status(401).json({ error: 'Unauthorized' });\n  // ...\n}",
                 references = listOf("https://react.dev/learn/keeping-components-pure")
             )
-            rule.id.startsWith("LAMBDA") || rule.id.startsWith("SERVERLESS") || rule.id.startsWith("SAM") || rule.id.startsWith("APIGATEWAY") -> FixSuggestion(
+            rule.id.startsWith("LAMBDA") || rule.id.startsWith("SERVERLESS") || rule.id.startsWith("SAM") ||
+                rule.id.startsWith("APIGATEWAY") -> FixSuggestion(
                 title = "Serverless Security Best Practices",
                 description = "Use secrets manager, proper IAM, VPC configuration",
-                code = "// Lambda with Secrets Manager:\nconst AWS = require('aws-sdk');\nconst secretsManager = new AWS.SecretsManager();\nlet cachedSecret;\n\nexports.handler = async (event) => {\n  if (!cachedSecret) {\n    const data = await secretsManager.getSecretValue({ SecretId: 'mySecret' }).promise();\n    cachedSecret = JSON.parse(data.SecretString);\n  }\n  // Use cachedSecret\n};\n\n// Least privilege IAM:\nPolicies:\n  - PolicyName: MinimalAccess\n    PolicyDocument:\n      Statement:\n        - Effect: Allow\n          Action: 'dynamodb:GetItem'\n          Resource: 'arn:aws:dynamodb:region:account:table/MyTable'",
+                code = "// Lambda with Secrets Manager:\nconst AWS = require('aws-sdk');\nconst secretsManager = new " +
+                    "AWS.SecretsManager();\nlet cachedSecret;\n\nexports.handler = async (event) => {\n  if (!cachedSecret) {\n    " +
+                    "const data = await secretsManager.getSecretValue({ SecretId: 'mySecret' }).promise();\n    cachedSecret = " +
+                    "JSON.parse(data.SecretString);\n  }\n  // Use cachedSecret\n};\n\n// Least privilege IAM:\nPolicies:\n  - " +
+                    "PolicyName: MinimalAccess\n    PolicyDocument:\n      Statement:\n        - Effect: Allow\n          Action: " +
+                    "'dynamodb:GetItem'\n          Resource: 'arn:aws:dynamodb:region:account:table/MyTable'",
                 references = listOf("https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html")
             )
-            rule.id.startsWith("DOCKER") || rule.id.startsWith("K8S") || rule.id.startsWith("HELM") || rule.id.startsWith("ISTIO") -> FixSuggestion(
+            rule.id.startsWith("DOCKER") || rule.id.startsWith("K8S") || rule.id.startsWith("HELM") ||
+                rule.id.startsWith("ISTIO") -> FixSuggestion(
                 title = "Container & Kubernetes Security",
                 description = "Non-root containers, resource limits, network policies",
-                code = "# Dockerfile best practices:\nFROM alpine:3.18\nRUN addgroup -g 1001 appuser && adduser -D -u 1001 -G appuser appuser\nUSER appuser\nCOPY --chown=appuser:appuser . /app\nHEALTHCHECK --interval=30s CMD wget -qO- http://localhost:8080/health\n\n# Kubernetes security:\napiVersion: v1\nkind: Pod\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n  - name: app\n    resources:\n      limits:\n        memory: \"256Mi\"\n        cpu: \"500m\"",
+                code = "# Dockerfile best practices:\nFROM alpine:3.18\nRUN addgroup -g 1001 appuser && adduser -D -u 1001 -G appuser " +
+                    "appuser\nUSER appuser\nCOPY --chown=appuser:appuser . /app\nHEALTHCHECK --interval=30s CMD wget -qO- " +
+                    "http://localhost:8080/health\n\n# Kubernetes security:\napiVersion: v1\nkind: Pod\nspec:\n  securityContext:\n  " +
+                    "  runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n  - name: app\n    resources:\n      limits:\n        " +
+                    "memory: \"256Mi\"\n        cpu: \"500m\"",
                 references = listOf("https://kubernetes.io/docs/concepts/security/")
             )
-            rule.id.startsWith("PRISMA") || rule.id.startsWith("SEQUELIZE") || rule.id.startsWith("TYPEORM") || rule.id.startsWith("MONGODB") || rule.id.startsWith("ELASTICSEARCH") -> FixSuggestion(
+            rule.id.startsWith("PRISMA") || rule.id.startsWith("SEQUELIZE") || rule.id.startsWith("TYPEORM") ||
+                rule.id.startsWith("MONGODB") || rule.id.startsWith("ELASTICSEARCH") -> FixSuggestion(
                 title = "Modern ORM/Database Security",
                 description = "Use parameterized queries, avoid raw SQL with user input",
-                code = "// Prisma safe query:\nconst users = await prisma.queryRaw`SELECT * FROM User WHERE email = \${email}`;\n\n// Sequelize with replacements:\nawait sequelize.query('SELECT * FROM users WHERE email = :email', { replacements: { email: userEmail }, type: QueryTypes.SELECT });\n\n// TypeORM parameterized:\nconst users = await repository.createQueryBuilder('user').where('user.email = :email', { email: userEmail }).getMany();\n\n// MongoDB safe:\ndb.collection('users').find({ email: userEmail });",
+                code = "// Prisma safe query:\nconst users = await prisma.queryRaw`SELECT * FROM User WHERE email = \${email}`;\n\n// " +
+                    "Sequelize with replacements:\nawait sequelize.query('SELECT * FROM users WHERE email = :email', { replacements: " +
+                    "{ email: userEmail }, type: QueryTypes.SELECT });\n\n// TypeORM parameterized:\nconst users = await " +
+                    "repository.createQueryBuilder('user').where('user.email = :email', { email: userEmail }).getMany();\n\n// " +
+                    "MongoDB safe:\ndb.collection('users').find({ email: userEmail });",
                 references = listOf("https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access")
             )
-            rule.id.startsWith("TEST") || rule.id.startsWith("GITHUB") || rule.id.startsWith("GITLAB") || rule.id.startsWith("JENKINS") || rule.id.startsWith("SONAR") -> FixSuggestion(
+            rule.id.startsWith("TEST") || rule.id.startsWith("GITHUB") || rule.id.startsWith("GITLAB") || rule.id.startsWith("JENKINS") ||
+                rule.id.startsWith("SONAR") -> FixSuggestion(
                 title = "CI/CD & Testing Security",
                 description = "Use secrets management, mask sensitive data in logs",
-                code = "# GitHub Actions secrets:\n- name: Deploy\n  env:\n    API_KEY: \${{ secrets.API_KEY }}\n  run: |\n    # Never echo secrets\n    deploy.sh\n\n# GitHub Actions PR validation:\non:\n  pull_request_target:\njobs:\n  validate:\n    if: github.event.pull_request.head.repo.full_name == github.repository\n    runs-on: ubuntu-latest\n\n# Jenkins credentials:\nwithCredentials([string(credentialsId: 'api-key', variable: 'API_KEY')]) {\n  sh 'deploy.sh'\n}",
+                code = "# GitHub Actions secrets:\n- name: Deploy\n  env:\n    API_KEY: \${{ secrets.API_KEY }}\n  run: |\n    # Never " +
+                    "echo secrets\n    deploy.sh\n\n# GitHub Actions PR validation:\non:\n  pull_request_target:\njobs:\n  " +
+                    "validate:\n    if: github.event.pull_request.head.repo.full_name == github.repository\n    runs-on: " +
+                    "ubuntu-latest\n\n# Jenkins credentials:\nwithCredentials([string(credentialsId: 'api-key', variable: " +
+                    "'API_KEY')]) {\n  sh 'deploy.sh'\n}",
                 references = listOf("https://docs.github.com/en/actions/security-guides/encrypted-secrets")
             )
-            rule.id.startsWith("DATADOG") || rule.id.startsWith("NEWRELIC") || rule.id.startsWith("SENTRY") || rule.id.startsWith("PROMETHEUS") || rule.id.startsWith("GRAFANA") || rule.id.startsWith("ELASTIC") -> FixSuggestion(
+            rule.id.startsWith("DATADOG") || rule.id.startsWith("NEWRELIC") || rule.id.startsWith("SENTRY") ||
+                rule.id.startsWith("PROMETHEUS") || rule.id.startsWith("GRAFANA") || rule.id.startsWith("ELASTIC") -> FixSuggestion(
                 title = "Monitoring & Observability Security",
                 description = "Protect API keys, secure metrics endpoints, authentication",
-                code = "// Environment-based config:\nconst apiKey = process.env.DATADOG_API_KEY;\n\n// Prometheus with auth:\n- job_name: 'app'\n  static_configs:\n    - targets: ['localhost:9090']\n  basic_auth:\n    username: 'prometheus'\n    password_file: '/etc/prometheus/password'\n\n// Grafana auth:\n[auth.anonymous]\nenabled = false\n\n[auth.basic]\nenabled = true\n\n// Sentry scrubbing:\nSentry.init({\n  beforeSend(event) {\n    if (event.request?.headers?.authorization) {\n      delete event.request.headers.authorization;\n    }\n    return event;\n  }\n});",
+                code = "// Environment-based config:\nconst apiKey = process.env.DATADOG_API_KEY;\n\n// Prometheus with auth:\n- " +
+                    "job_name: 'app'\n  static_configs:\n    - targets: ['localhost:9090']\n  basic_auth:\n    username: " +
+                    "'prometheus'\n    password_file: '/etc/prometheus/password'\n\n// Grafana auth:\n[auth.anonymous]\nenabled = " +
+                    "false\n\n[auth.basic]\nenabled = true\n\n// Sentry scrubbing:\nSentry.init({\n  beforeSend(event) {\n    if " +
+                    "(event.request?.headers?.authorization) {\n      delete event.request.headers.authorization;\n    }\n    return " +
+                    "event;\n  }\n});",
                 references = listOf("https://docs.datadoghq.com/account_management/api-app-keys/")
             )
             rule.id.startsWith("CLOUDFORMATION") || rule.id.startsWith("TERRAFORM") -> FixSuggestion(
                 title = "Infrastructure as Code Security",
                 description = "Use AWS Secrets Manager, encrypted state, sensitive variables",
-                code = "# Terraform with secrets:\nvariable \"db_password\" {\n  type      = string\n  sensitive = true\n}\n\n# Terraform backend encryption:\nterraform {\n  backend \"s3\" {\n    bucket         = \"terraform-state\"\n    key            = \"state\"\n    region         = \"us-east-1\"\n    encrypt        = true\n    kms_key_id     = \"arn:aws:kms:...\"\n    dynamodb_table = \"terraform-lock\"\n  }\n}\n\n# CloudFormation with Secrets Manager:\nMasterUserPassword: !Sub '{{resolve:secretsmanager:DBPassword:SecretString:password}}'",
+                code = "# Terraform with secrets:\nvariable \"db_password\" {\n  type      = string\n  sensitive = true\n}\n\n# " +
+                    "Terraform backend encryption:\nterraform {\n  backend \"s3\" {\n    bucket         = \"terraform-state\"\n    " +
+                    "key            = \"state\"\n    region         = \"us-east-1\"\n    encrypt        = true\n    kms_key_id     = " +
+                    "\"arn:aws:kms:...\"\n    dynamodb_table = \"terraform-lock\"\n  }\n}\n\n# CloudFormation with Secrets Manager:\n" +
+                    "MasterUserPassword: !Sub '{{resolve:secretsmanager:DBPassword:SecretString:password}}'",
                 references = listOf("https://www.terraform.io/docs/language/values/variables.html#suppressing-values-in-cli-output")
             )
             rule.id.startsWith("API") -> FixSuggestion(
                 title = "API Security Best Practices",
                 description = "Rate limiting, pagination, input validation, secure tokens",
-                code = "// Rate limiting with Pageable:\n@GetMapping(\"/api/v1/users\")\npublic Page<User> getUsers(@PageableDefault(size = 20) Pageable pageable) {\n  return userService.findAll(pageable);\n}\n\n// Secure CORS:\n@CrossOrigin(origins = {\"https://trusted-domain.com\"})\n\n// DTO instead of Entity:\npublic User updateUser(@RequestBody UserDTO dto) {\n  return userService.update(dto);\n}\n\n// API token in HTTP-only cookie (not localStorage):\nCookie apiCookie = new Cookie(\"apiToken\", apiToken);\napiCookie.setHttpOnly(true);\napiCookie.setSecure(true);",
+                code = "// Rate limiting with Pageable:\n@GetMapping(\"/api/v1/users\")\npublic Page<User> " +
+                    "getUsers(@PageableDefault(size = 20) Pageable pageable) {\n  return userService.findAll(pageable);\n}\n\n// " +
+                    "Secure CORS:\n@CrossOrigin(origins = {\"https://trusted-domain.com\"})\n\n// DTO instead of Entity:\npublic " +
+                    "User updateUser(@RequestBody UserDTO dto) {\n  return userService.update(dto);\n}\n\n// API token in HTTP-only " +
+                    "cookie (not localStorage):\nCookie apiCookie = new Cookie(\"apiToken\", apiToken);\n" +
+                    "apiCookie.setHttpOnly(true);\napiCookie.setSecure(true);",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html")
             )
             rule.id.startsWith("SESSION") -> FixSuggestion(
                 title = "Secure Session Management",
                 description = "Regenerate session ID, secure cookies, proper timeout",
-                code = "// Session regeneration:\n@PostMapping(\"/login\")\npublic String login(HttpServletRequest request) {\n  request.getSession().invalidate();\n  HttpSession newSession = request.getSession(true);\n  // ...\n}\n\n// Secure cookie:\nCookie cookie = new Cookie(\"JSESSIONID\", sessionId);\ncookie.setSecure(true);\ncookie.setHttpOnly(true);\ncookie.setSameSite(\"Strict\");\ncookie.setMaxAge(1800); // 30 minutes\n\n// Logout:\n@PostMapping(\"/logout\")\npublic void logout(HttpSession session) {\n  session.invalidate();\n}",
+                code = "// Session regeneration:\n@PostMapping(\"/login\")\npublic String login(HttpServletRequest request) {\n  " +
+                    "request.getSession().invalidate();\n  HttpSession newSession = request.getSession(true);\n  // ...\n}\n\n// " +
+                    "Secure cookie:\nCookie cookie = new Cookie(\"JSESSIONID\", sessionId);\ncookie.setSecure(true);\n" +
+                    "cookie.setHttpOnly(true);\ncookie.setSameSite(\"Strict\");\ncookie.setMaxAge(1800); // 30 minutes\n\n// " +
+                    "Logout:\n@PostMapping(\"/logout\")\npublic void logout(HttpSession session) {\n  session.invalidate();\n}",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html")
             )
             rule.id.startsWith("INPUT") -> FixSuggestion(
                 title = "Input Validation & Sanitization",
                 description = "Validate all inputs, prevent injection, bounds checking",
-                code = "// Regex DoS prevention:\nPattern.compile(regex, Pattern.DOTALL).matcher(input).matches();\n\n// Safe reflection:\nif (ALLOWED_CLASSES.contains(className)) {\n  Class.forName(className);\n}\n\n// Integer overflow:\nint result = Math.addExact(a, b); // Throws on overflow\n\n// Array bounds:\nif (index >= 0 && index < array.length) {\n  value = array[index];\n}\n\n// URL validation:\nif (url.startsWith(\"https://trusted.com/\")) {\n  new URL(url);\n}\n\n// Filename sanitization:\nString safe = Paths.get(filename).getFileName().toString();",
+                code = "// Regex DoS prevention:\nPattern.compile(regex, Pattern.DOTALL).matcher(input).matches();\n\n// Safe " +
+                    "reflection:\nif (ALLOWED_CLASSES.contains(className)) {\n  Class.forName(className);\n}\n\n// Integer " +
+                    "overflow:\nint result = Math.addExact(a, b); // Throws on overflow\n\n// Array bounds:\nif (index >= 0 && index " +
+                    "< array.length) {\n  value = array[index];\n}\n\n// URL validation:\nif " +
+                    "(url.startsWith(\"https://trusted.com/\")) {\n  new URL(url);\n}\n\n// Filename sanitization:\nString safe = " +
+                    "Paths.get(filename).getFileName().toString();",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html")
             )
             rule.id.startsWith("PERF") -> FixSuggestion(
                 title = "Performance & Resource Management",
                 description = "Connection pooling, proper cleanup, bounded resources",
-                code = "// N+1 prevention:\n@EntityGraph(attributePaths = {\"items\"})\nList<Order> findAll();\n\n// StringBuilder in loop:\nStringBuilder sb = new StringBuilder();\nfor (String s : list) {\n  sb.append(s);\n}\n\n// Bounded thread pool:\nExecutorService executor = Executors.newFixedThreadPool(10);\n\n// Try-with-resources:\ntry (BufferedReader br = Files.newBufferedReader(path)) {\n  // ...\n}\n\n// Connection pooling:\nHikariConfig config = new HikariConfig();\nconfig.setMaximumPoolSize(10);\nDataSource ds = new HikariDataSource(config);",
+                code = "// N+1 prevention:\n@EntityGraph(attributePaths = {\"items\"})\nList<Order> findAll();\n\n// StringBuilder in " +
+                    "loop:\nStringBuilder sb = new StringBuilder();\nfor (String s : list) {\n  sb.append(s);\n}\n\n// Bounded " +
+                    "thread pool:\nExecutorService executor = Executors.newFixedThreadPool(10);\n\n// Try-with-resources:\ntry " +
+                    "(BufferedReader br = Files.newBufferedReader(path)) {\n  // ...\n}\n\n// Connection pooling:\nHikariConfig " +
+                    "config = new HikariConfig();\nconfig.setMaximumPoolSize(10);\nDataSource ds = new HikariDataSource(config);",
                 references = listOf("https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html")
             )
             rule.id.startsWith("GRAPHQL") -> FixSuggestion(
                 title = "GraphQL Security",
                 description = "Query depth limiting, complexity analysis, authorization",
-                code = "// Query depth limit:\n@Bean\npublic GraphQLSchema schema() {\n  return GraphQLSchema.newSchema()\n    .query(queryType)\n    .fieldVisibility(MaxQueryDepthInstrumentation.build(15))\n    .build();\n}\n\n// Complexity limit:\n@Bean\npublic Instrumentation complexityInstrumentation() {\n  return new MaxQueryComplexityInstrumentation(1000);\n}\n\n// Field authorization:\n@PreAuthorize(\"hasRole('ADMIN')\")\n@GraphQLQuery\npublic User getUser(Long id) { ... }",
+                code = "// Query depth limit:\n@Bean\npublic GraphQLSchema schema() {\n  return GraphQLSchema.newSchema()\n    " +
+                    ".query(queryType)\n    .fieldVisibility(MaxQueryDepthInstrumentation.build(15))\n    .build();\n}\n\n// " +
+                    "Complexity limit:\n@Bean\npublic Instrumentation complexityInstrumentation() {\n  return new " +
+                    "MaxQueryComplexityInstrumentation(1000);\n}\n\n// Field authorization:\n@PreAuthorize(\"hasRole('ADMIN')\")\n" +
+                    "@GraphQLQuery\npublic User getUser(Long id) { ... }",
                 references = listOf("https://www.graphql-java.com/documentation/instrumentation/")
             )
             rule.id.startsWith("OAUTH") || rule.id.startsWith("JWT") -> FixSuggestion(
                 title = "OAuth & JWT Security",
                 description = "State parameter, redirect URI validation, JWT verification",
-                code = "// OAuth with state:\nString state = generateRandomState();\nsession.setAttribute(\"oauth_state\", state);\nString authUrl = baseUrl + \"?state=\" + state;\n\n// Redirect URI validation:\nif (!ALLOWED_REDIRECTS.contains(redirectUri)) {\n  throw new SecurityException(\"Invalid redirect URI\");\n}\n\n// JWT verification:\nDecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret))\n  .withIssuer(\"auth0\")\n  .build()\n  .verify(token);\n\n// PKCE for mobile:\nString verifier = generateCodeVerifier();\nString challenge = generateCodeChallenge(verifier);",
+                code = "// OAuth with state:\nString state = generateRandomState();\nsession.setAttribute(\"oauth_state\", state);\n" +
+                    "String authUrl = baseUrl + \"?state=\" + state;\n\n// Redirect URI validation:\nif " +
+                    "(!ALLOWED_REDIRECTS.contains(redirectUri)) {\n  throw new SecurityException(\"Invalid redirect URI\");\n}\n\n// " +
+                    "JWT verification:\nDecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret))\n  .withIssuer(\"auth0\")\n  " +
+                    ".build()\n  .verify(token);\n\n// PKCE for mobile:\nString verifier = generateCodeVerifier();\nString challenge " +
+                    "= generateCodeChallenge(verifier);",
                 references = listOf("https://oauth.net/2/pkce/")
             )
             rule.id.startsWith("GRPC") -> FixSuggestion(
                 title = "gRPC Security",
                 description = "TLS encryption, authentication, message size limits",
-                code = "// gRPC with TLS:\nNettyServerBuilder.forPort(8443)\n  .useTransportSecurity(certChainFile, privateKeyFile)\n  .addService(myService)\n  .build();\n\n// Authentication interceptor:\npublic class AuthInterceptor implements ServerInterceptor {\n  @Override\n  public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(...) {\n    String token = headers.get(AUTH_HEADER);\n    validateToken(token);\n    return next.startCall(call, headers);\n  }\n}\n\n// Message size limit:\nServerBuilder.forPort(8080)\n  .maxInboundMessageSize(1024 * 1024) // 1MB\n  .build();",
+                code = "// gRPC with TLS:\nNettyServerBuilder.forPort(8443)\n  .useTransportSecurity(certChainFile, privateKeyFile)\n  " +
+                    ".addService(myService)\n  .build();\n\n// Authentication interceptor:\npublic class AuthInterceptor implements " +
+                    "ServerInterceptor {\n  @Override\n  public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(...) {\n    " +
+                    "String token = headers.get(AUTH_HEADER);\n    validateToken(token);\n    return next.startCall(call, headers);\n" +
+                    "  }\n}\n\n// Message size limit:\nServerBuilder.forPort(8080)\n  .maxInboundMessageSize(1024 * 1024) // 1MB\n  " +
+                    ".build();",
                 references = listOf("https://grpc.io/docs/guides/auth/")
             )
             rule.id.startsWith("WS") -> FixSuggestion(
                 title = "WebSocket Security",
                 description = "Origin validation, authentication, rate limiting",
-                code = "// Origin validation:\n@Configuration\npublic class WebSocketConfig implements WebSocketConfigurer {\n  @Override\n  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {\n    registry.addHandler(handler, \"/ws\")\n      .setAllowedOrigins(\"https://trusted.com\");\n  }\n}\n\n// Authentication:\n@OnOpen\npublic void onOpen(Session session, @PathParam(\"token\") String token) {\n  if (!validateToken(token)) {\n    session.close(new CloseReason(POLICY_VIOLATION, \"Unauthorized\"));\n  }\n}\n\n// Use WSS:\nconst ws = new WebSocket('wss://example.com/ws');",
+                code = "// Origin validation:\n@Configuration\npublic class WebSocketConfig implements WebSocketConfigurer {\n  " +
+                    "@Override\n  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {\n    " +
+                    "registry.addHandler(handler, \"/ws\")\n      .setAllowedOrigins(\"https://trusted.com\");\n  }\n}\n\n// " +
+                    "Authentication:\n@OnOpen\npublic void onOpen(Session session, @PathParam(\"token\") String token) {\n  if " +
+                    "(!validateToken(token)) {\n    session.close(new CloseReason(POLICY_VIOLATION, \"Unauthorized\"));\n  }\n}\n\n" +
+                    "// Use WSS:\nconst ws = new WebSocket('wss://example.com/ws');",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#websockets")
             )
             rule.id.startsWith("SERIAL") -> FixSuggestion(
                 title = "Safe Serialization",
                 description = "Avoid deserializing untrusted data, use safe parsers",
-                code = "// Safe XML parsing:\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);\ndbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\n\n// Safe YAML:\nYaml yaml = new Yaml(new SafeConstructor());\n\n// Safe Jackson:\nObjectMapper mapper = new ObjectMapper();\nmapper.disableDefaultTyping();\nmapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);\n\n// Avoid ObjectInputStream - use JSON:\nObjectMapper mapper = new ObjectMapper();\nMyClass obj = mapper.readValue(jsonString, MyClass.class);",
+                code = "// Safe XML parsing:\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\n" +
+                    "dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);\n" +
+                    "dbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\n\n// Safe YAML:\nYaml yaml = " +
+                    "new Yaml(new SafeConstructor());\n\n// Safe Jackson:\nObjectMapper mapper = new ObjectMapper();\n" +
+                    "mapper.disableDefaultTyping();\nmapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, " +
+                    "JsonTypeInfo.As.WRAPPER_ARRAY);\n\n// Avoid ObjectInputStream - use JSON:\nObjectMapper mapper = new " +
+                    "ObjectMapper();\nMyClass obj = mapper.readValue(jsonString, MyClass.class);",
                 references = listOf("https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html")
             )
             else -> null
@@ -484,46 +652,78 @@ class VulnSpeedEngine : AutoCloseable {
             ruleId.startsWith("SECRET", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
             ruleId.contains("SQL", ignoreCase = true) || ruleId.contains("DB", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
             ruleId.contains("XSS", ignoreCase = true) -> VulnerabilityType.XSS
-            ruleId.contains("CRYPTO", ignoreCase = true) || ruleId.contains("JWT", ignoreCase = true) || ruleId.contains("TOKEN", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
+            ruleId.contains("CRYPTO", ignoreCase = true) || ruleId.contains("JWT", ignoreCase = true) ||
+                ruleId.contains("TOKEN", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
             ruleId.contains("AUTH", ignoreCase = true) || ruleId.contains("SESSION", ignoreCase = true) -> VulnerabilityType.AUTHENTICATION
-            ruleId.contains("CMD", ignoreCase = true) || ruleId.contains("SCRIPT", ignoreCase = true) || ruleId.contains("EXPR", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
+            ruleId.contains("CMD", ignoreCase = true) || ruleId.contains("SCRIPT", ignoreCase = true) ||
+                ruleId.contains("EXPR", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
             ruleId.contains("PATH", ignoreCase = true) || ruleId.contains("FILE", ignoreCase = true) -> VulnerabilityType.PATH_TRAVERSAL
             ruleId.contains("XXE", ignoreCase = true) -> VulnerabilityType.XXE
-            ruleId.contains("DESER", ignoreCase = true) || ruleId.contains("PICKLE", ignoreCase = true) -> VulnerabilityType.INSECURE_DESERIALIZATION
+            ruleId.contains("DESER", ignoreCase = true) ||
+                ruleId.contains("PICKLE", ignoreCase = true) -> VulnerabilityType.INSECURE_DESERIALIZATION
             ruleId.contains("SSRF", ignoreCase = true) -> VulnerabilityType.MISCONFIG
             ruleId.contains("IDOR", ignoreCase = true) || ruleId.contains("ACCESS", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
             ruleId.contains("CSRF", ignoreCase = true) -> VulnerabilityType.CSRF
             ruleId.contains("LOG", ignoreCase = true) -> VulnerabilityType.INSUFFICIENT_LOGGING
             ruleId.contains("REDIRECT", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
-            ruleId.contains("COOKIE", ignoreCase = true) || ruleId.contains("CORS", ignoreCase = true) || ruleId.contains("API", ignoreCase = true) -> VulnerabilityType.MISCONFIG
+            ruleId.contains("COOKIE", ignoreCase = true) || ruleId.contains("CORS", ignoreCase = true) ||
+                ruleId.contains("API", ignoreCase = true) -> VulnerabilityType.MISCONFIG
             ruleId.contains("LDAP", ignoreCase = true) || ruleId.contains("XPATH", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
-            ruleId.contains("REFLECT", ignoreCase = true) || ruleId.contains("CLASSLOAD", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
+            ruleId.contains("REFLECT", ignoreCase = true) ||
+                ruleId.contains("CLASSLOAD", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
             ruleId.contains("BUFFER", ignoreCase = true) -> VulnerabilityType.BUFFER_OVERFLOW
-            ruleId.contains("CLOUD", ignoreCase = true) || ruleId.contains("DOCKER", ignoreCase = true) || ruleId.contains("MOBILE", ignoreCase = true) || ruleId.contains("CICD", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
-            ruleId.contains("INPUT", ignoreCase = true) || ruleId.contains("SIZE", ignoreCase = true) || ruleId.contains("RATE", ignoreCase = true) -> VulnerabilityType.MISCONFIG
-            ruleId.contains("NULL", ignoreCase = true) || ruleId.contains("RESOURCE", ignoreCase = true) -> VulnerabilityType.INSECURE_DEPENDENCY
-            ruleId.contains("RACE", ignoreCase = true) || ruleId.contains("SYNC", ignoreCase = true) || ruleId.contains("THREAD", ignoreCase = true) -> VulnerabilityType.MISCONFIG
-            ruleId.contains("KOTLIN", ignoreCase = true) || ruleId.contains("RECORD", ignoreCase = true) || ruleId.contains("PATTERN", ignoreCase = true) || ruleId.contains("VIRTUAL", ignoreCase = true) -> VulnerabilityType.INSECURE_DEPENDENCY
-            ruleId.contains("SPRING", ignoreCase = true) || ruleId.contains("REST", ignoreCase = true) || ruleId.contains("GRAPHQL", ignoreCase = true) || ruleId.contains("WEBSOCKET", ignoreCase = true) -> VulnerabilityType.MISCONFIG
-            ruleId.contains("MICRO", ignoreCase = true) || ruleId.contains("KAFKA", ignoreCase = true) || ruleId.contains("REDIS", ignoreCase = true) || ruleId.contains("RABBIT", ignoreCase = true) -> VulnerabilityType.AUTHENTICATION
+            ruleId.contains("CLOUD", ignoreCase = true) || ruleId.contains("DOCKER", ignoreCase = true) ||
+                ruleId.contains("MOBILE", ignoreCase = true) ||
+                ruleId.contains("CICD", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
+            ruleId.contains("INPUT", ignoreCase = true) || ruleId.contains("SIZE", ignoreCase = true) ||
+                ruleId.contains("RATE", ignoreCase = true) -> VulnerabilityType.MISCONFIG
+            ruleId.contains("NULL", ignoreCase = true) ||
+                ruleId.contains("RESOURCE", ignoreCase = true) -> VulnerabilityType.INSECURE_DEPENDENCY
+            ruleId.contains("RACE", ignoreCase = true) || ruleId.contains("SYNC", ignoreCase = true) ||
+                ruleId.contains("THREAD", ignoreCase = true) -> VulnerabilityType.MISCONFIG
+            ruleId.contains("KOTLIN", ignoreCase = true) || ruleId.contains("RECORD", ignoreCase = true) ||
+                ruleId.contains("PATTERN", ignoreCase = true) ||
+                ruleId.contains("VIRTUAL", ignoreCase = true) -> VulnerabilityType.INSECURE_DEPENDENCY
+            ruleId.contains("SPRING", ignoreCase = true) || ruleId.contains("REST", ignoreCase = true) ||
+                ruleId.contains("GRAPHQL", ignoreCase = true) ||
+                ruleId.contains("WEBSOCKET", ignoreCase = true) -> VulnerabilityType.MISCONFIG
+            ruleId.contains("MICRO", ignoreCase = true) || ruleId.contains("KAFKA", ignoreCase = true) ||
+                ruleId.contains("REDIS", ignoreCase = true) ||
+                ruleId.contains("RABBIT", ignoreCase = true) -> VulnerabilityType.AUTHENTICATION
             ruleId.contains("WEB", ignoreCase = true) || ruleId.contains("K8S", ignoreCase = true) -> VulnerabilityType.MISCONFIG
             ruleId.contains("PYTHON", ignoreCase = true) && ruleId.contains("001") -> VulnerabilityType.INSECURE_DESERIALIZATION
-            ruleId.contains("JS", ignoreCase = true) || ruleId.contains("TS", ignoreCase = true) || ruleId.contains("NODE", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
+            ruleId.contains("JS", ignoreCase = true) || ruleId.contains("TS", ignoreCase = true) ||
+                ruleId.contains("NODE", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
             ruleId.contains("ATTACK", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION
-            ruleId.contains("GDPR", ignoreCase = true) || ruleId.contains("PCI", ignoreCase = true) || ruleId.contains("HIPAA", ignoreCase = true) || ruleId.contains("PRIVACY", ignoreCase = true) -> VulnerabilityType.INFORMATION_DISCLOSURE
+            ruleId.contains("GDPR", ignoreCase = true) || ruleId.contains("PCI", ignoreCase = true) ||
+                ruleId.contains("HIPAA", ignoreCase = true) ||
+                ruleId.contains("PRIVACY", ignoreCase = true) -> VulnerabilityType.INFORMATION_DISCLOSURE
             ruleId.contains("QUALITY", ignoreCase = true) -> VulnerabilityType.INSECURE_DEPENDENCY
             ruleId.contains("ENCODING", ignoreCase = true) || ruleId.contains("HASH", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
             ruleId.contains("NET", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
-            ruleId.contains("AUTHZ", ignoreCase = true) || ruleId.contains("BUSINESS", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
-            ruleId.contains("REACT", ignoreCase = true) || ruleId.contains("ANGULAR", ignoreCase = true) || ruleId.contains("VUE", ignoreCase = true) || ruleId.contains("NEXTJS", ignoreCase = true) -> VulnerabilityType.XSS
-            ruleId.contains("LAMBDA", ignoreCase = true) || ruleId.contains("SERVERLESS", ignoreCase = true) || ruleId.contains("SAM", ignoreCase = true) || ruleId.contains("APIGATEWAY", ignoreCase = true) -> VulnerabilityType.MISCONFIG
-            ruleId.contains("CLOUDFORMATION", ignoreCase = true) || ruleId.contains("TERRAFORM", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
+            ruleId.contains("AUTHZ", ignoreCase = true) ||
+                ruleId.contains("BUSINESS", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
+            ruleId.contains("REACT", ignoreCase = true) || ruleId.contains("ANGULAR", ignoreCase = true) ||
+                ruleId.contains("VUE", ignoreCase = true) || ruleId.contains("NEXTJS", ignoreCase = true) -> VulnerabilityType.XSS
+            ruleId.contains("LAMBDA", ignoreCase = true) || ruleId.contains("SERVERLESS", ignoreCase = true) ||
+                ruleId.contains("SAM", ignoreCase = true) ||
+                ruleId.contains("APIGATEWAY", ignoreCase = true) -> VulnerabilityType.MISCONFIG
+            ruleId.contains("CLOUDFORMATION", ignoreCase = true) ||
+                ruleId.contains("TERRAFORM", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
             ruleId.contains("HELM", ignoreCase = true) || ruleId.contains("ISTIO", ignoreCase = true) -> VulnerabilityType.MISCONFIG
-            ruleId.contains("PRISMA", ignoreCase = true) || ruleId.contains("SEQUELIZE", ignoreCase = true) || ruleId.contains("TYPEORM", ignoreCase = true) || ruleId.contains("CASSANDRA", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
-            ruleId.contains("MONGODB", ignoreCase = true) || ruleId.contains("ELASTICSEARCH", ignoreCase = true) || ruleId.contains("FIRESTORE", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
+            ruleId.contains("PRISMA", ignoreCase = true) || ruleId.contains("SEQUELIZE", ignoreCase = true) ||
+                ruleId.contains("TYPEORM", ignoreCase = true) ||
+                ruleId.contains("CASSANDRA", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
+            ruleId.contains("MONGODB", ignoreCase = true) || ruleId.contains("ELASTICSEARCH", ignoreCase = true) ||
+                ruleId.contains("FIRESTORE", ignoreCase = true) -> VulnerabilityType.SQL_INJECTION
             ruleId.contains("DYNAMODB", ignoreCase = true) -> VulnerabilityType.WEAK_CRYPTO
-            ruleId.contains("TEST", ignoreCase = true) || ruleId.contains("GITHUB", ignoreCase = true) || ruleId.contains("GITLAB", ignoreCase = true) || ruleId.contains("JENKINS", ignoreCase = true) || ruleId.contains("SONAR", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
-            ruleId.contains("DATADOG", ignoreCase = true) || ruleId.contains("NEWRELIC", ignoreCase = true) || ruleId.contains("SENTRY", ignoreCase = true) || ruleId.contains("PROMETHEUS", ignoreCase = true) || ruleId.contains("GRAFANA", ignoreCase = true) || ruleId.contains("ELASTIC", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
+            ruleId.contains("TEST", ignoreCase = true) || ruleId.contains("GITHUB", ignoreCase = true) ||
+                ruleId.contains("GITLAB", ignoreCase = true) || ruleId.contains("JENKINS", ignoreCase = true) ||
+                ruleId.contains("SONAR", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
+            ruleId.contains("DATADOG", ignoreCase = true) || ruleId.contains("NEWRELIC", ignoreCase = true) ||
+                ruleId.contains("SENTRY", ignoreCase = true) || ruleId.contains("PROMETHEUS", ignoreCase = true) ||
+                ruleId.contains("GRAFANA", ignoreCase = true) ||
+                ruleId.contains("ELASTIC", ignoreCase = true) -> VulnerabilityType.HARDCODED_CREDENTIALS
             ruleId.contains("API", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
             ruleId.contains("SESSION", ignoreCase = true) -> VulnerabilityType.ACCESS_CONTROL
             ruleId.contains("INPUT", ignoreCase = true) -> VulnerabilityType.COMMAND_INJECTION

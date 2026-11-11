@@ -1,12 +1,11 @@
 package com.jakubjirak.vulnspeed.ui
 
-import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBPanel
 import com.jakubjirak.vulnspeed.model.ScanResult
 import javax.swing.JLabel
 import java.awt.BorderLayout
 
-class VulnSpeedResultsPanel(private val project: Project) : JBPanel<VulnSpeedResultsPanel>() {
+class VulnSpeedResultsPanel : JBPanel<VulnSpeedResultsPanel>() {
     
     init {
         layout = BorderLayout()
