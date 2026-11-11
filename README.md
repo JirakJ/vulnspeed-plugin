@@ -1,6 +1,6 @@
 # VulnSpeed SAST
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE) ![Version](https://img.shields.io/badge/version-2026.9.0-green)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE) ![Version](https://img.shields.io/badge/version-2026.9.1-green)
 
 > **Free & open source.** Since 2026.8.0 the plugin is completely free — every feature is unlocked for everyone, no license needed — and the source code is available under the Apache License 2.0.
 
@@ -25,12 +25,12 @@ Static application security testing (SAST) plugin for JetBrains IDEs. Real-time 
 - **Multi-language support** — full scanning for Java, Python, C/C++, JavaScript, TypeScript, and Swift
 - **OWASP Top 10 coverage** — detects all 10 categories including injection, broken access control, cryptographic failures, SSRF, and more
 - **CWE Top 25 coverage** — SQL injection (CWE-89), XSS (CWE-79), OS command injection (CWE-78), information disclosure (CWE-200), and 21+ more
-- **Global inspection** — VulnSpeed Security Analysis inspection integrated into IDE's inspection framework
-- **One-click auto-fixes** — quick-fix suggestions applied instantly via Alt+Enter
+- **Remediation guidance** — every finding carries a fix suggestion with OWASP / CWE references
 - **Scan file** — right-click in editor → "Scan File with VulnSpeed" for on-demand analysis
+- **Scan on save** — optional per-project setting that re-scans a file whenever it is saved
 - **Scan project** — right-click project folder → "Scan Project with VulnSpeed" for full project scanning
-- **VulnSpeed tool window** — bottom panel displaying vulnerability list, statistics, and quick access to fixes
-- **Configurable settings** — toggle real-time scanning, auto-fix suggestions, and the max file size to scan
+- **VulnSpeed tool window** — bottom panel displaying vulnerability list and statistics
+- **Configurable settings** — toggle real-time scanning, set the max file size to scan, enable scan on save
 
 ## Installation
 
@@ -44,9 +44,16 @@ Static application security testing (SAST) plugin for JetBrains IDEs. Real-time 
 
 ## Configuration
 
-Settings → Tools → VulnSpeed
+Settings → Tools → VulnSpeed (two pages: application-wide and per-project).
 
-Toggle real-time scanning, configure max file size limits, enable/disable auto-fix suggestions.
+| Setting | Scope | Default | Effect |
+|---|---|---|---|
+| Enable real-time scanning | IDE | on | Turns the as-you-type editor highlighting on or off. Manual scans keep working. |
+| Max file size (KB) | IDE | 1000 | Files larger than this are skipped by editor highlighting, Scan File, Scan Project and scan on save. |
+| Scan changed file on save | Project | off | Runs the file scan whenever a supported file is saved; results update the VulnSpeed tool window without stealing focus. |
+
+VulnSpeed collects no telemetry and sends no source code anywhere. The only network
+access is the explicit, opt-in CVE enrichment (OSV.dev / NVD) described below.
 
 ## Usage
 
@@ -56,8 +63,8 @@ Right-click in the editor → **Scan File with VulnSpeed**. Vulnerabilities appe
 ### Scan a Project
 Right-click a project folder → **Scan Project with VulnSpeed**. Review all findings in the tool window with severity levels and CWE/OWASP classifications.
 
-### Apply Fixes
-Click on a highlighted vulnerability → **Alt+Enter** → select the suggested fix to apply it instantly.
+### Fix Findings
+Each finding includes a fix suggestion (title, description, example code and references). Apply the change yourself, or accept the finding with a `// vulnspeed-ignore` comment.
 
 ## Security Baseline & Differential Scan
 
@@ -123,7 +130,7 @@ PR check only when HIGH/CRITICAL regressions are introduced. Use `--create` to
 refresh the baseline from a trusted branch.
 
 ### Real-Time Scanning
-With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed.
+With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed. Switch it off in Settings → Tools → VulnSpeed if you prefer on-demand or on-save scans only.
 
 ## CVE Enrichment (OSV + NVD)
 

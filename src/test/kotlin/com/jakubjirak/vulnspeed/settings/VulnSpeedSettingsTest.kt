@@ -4,6 +4,7 @@
  */
 package com.jakubjirak.vulnspeed.settings
 
+import com.jakubjirak.vulnspeed.core.ScanPolicy
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -14,9 +15,8 @@ class VulnSpeedSettingsTest {
         val settings = VulnSpeedAppSettings()
 
         assertTrue(settings.enableRealTimeScanning)
-        assertTrue(settings.enableAutoFix)
+        assertEquals(ScanPolicy.DEFAULT_MAX_FILE_SIZE_KB, settings.maxFileSizeKb)
         assertEquals(1000, settings.maxFileSizeKb)
-        assertFalse(settings.enableTelemetry)
     }
 
     @Test
@@ -29,30 +29,20 @@ class VulnSpeedSettingsTest {
     fun `VulnSpeedAppSettings loadState copies properties`() {
         val source = VulnSpeedAppSettings().apply {
             enableRealTimeScanning = false
-            enableAutoFix = false
             maxFileSizeKb = 2000
-            enableTelemetry = true
         }
 
         val target = VulnSpeedAppSettings()
         target.loadState(source)
 
         assertFalse(target.enableRealTimeScanning)
-        assertFalse(target.enableAutoFix)
         assertEquals(2000, target.maxFileSizeKb)
-        assertTrue(target.enableTelemetry)
     }
 
     @Test
     fun `VulnSpeedProjectSettings has correct defaults`() {
         val settings = VulnSpeedProjectSettings()
-
-        assertEquals(3, settings.excludePatterns.size)
-        assertTrue(settings.excludePatterns.contains("**/node_modules/**"))
-        assertTrue(settings.excludePatterns.contains("**/build/**"))
-        assertTrue(settings.excludePatterns.contains("**/.git/**"))
         assertFalse(settings.scanOnSave)
-        assertFalse(settings.autoFixOnSave)
     }
 
     @Test
@@ -63,33 +53,24 @@ class VulnSpeedSettingsTest {
 
     @Test
     fun `VulnSpeedProjectSettings loadState copies properties`() {
-        val source = VulnSpeedProjectSettings().apply {
-            excludePatterns = listOf("**/dist/**")
-            scanOnSave = true
-            autoFixOnSave = true
-        }
+        val source = VulnSpeedProjectSettings().apply { scanOnSave = true }
 
         val target = VulnSpeedProjectSettings()
         target.loadState(source)
 
-        assertEquals(1, target.excludePatterns.size)
-        assertEquals("**/dist/**", target.excludePatterns[0])
         assertTrue(target.scanOnSave)
-        assertTrue(target.autoFixOnSave)
     }
 
     @Test
-    fun `VulnSpeedAppSettings can toggle all settings`() {
-        val settings = VulnSpeedAppSettings()
+    fun `settings expose no telemetry or auto-fix switches`() {
+        // A free OSS plugin collects no telemetry and has no auto-fix engine, so the
+        // settings must not offer switches for them (they used to exist but did nothing).
+        val appFields = VulnSpeedAppSettings::class.java.declaredFields.map { it.name }.toSet()
+        val projectFields = VulnSpeedProjectSettings::class.java.declaredFields.map { it.name }.toSet()
 
-        settings.enableRealTimeScanning = false
-        settings.enableAutoFix = false
-        settings.enableTelemetry = true
-        settings.maxFileSizeKb = 5000
-
-        assertFalse(settings.enableRealTimeScanning)
-        assertFalse(settings.enableAutoFix)
-        assertTrue(settings.enableTelemetry)
-        assertEquals(5000, settings.maxFileSizeKb)
+        assertFalse("enableTelemetry" in appFields)
+        assertFalse("enableAutoFix" in appFields)
+        assertFalse("autoFixOnSave" in projectFields)
+        assertFalse("excludePatterns" in projectFields)
     }
 }

@@ -46,13 +46,9 @@ class VulnSpeedEngineTest {
         return method.invoke(engine, rule) as? FixSuggestion
     }
 
-    private fun invokeIsSupportedFile(engine: VulnSpeedEngine, filename: String): Boolean {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
-            "isSupportedFile", String::class.java
-        )
-        method.isAccessible = true
-        return method.invoke(engine, filename) as Boolean
-    }
+    @Suppress("UNUSED_PARAMETER")
+    private fun invokeIsSupportedFile(engine: VulnSpeedEngine, filename: String): Boolean =
+        ScanPolicy.isSupportedFile(filename)
 
     @Test
     fun `parseVulnType maps SQL rule to SQL_INJECTION`() {

@@ -6,6 +6,21 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 
 ## [Unreleased]
 
+## [2026.9.1] - 2026-11-12
+
+### Fixed
+- **Enable real-time scanning** now actually switches the as-you-type editor highlighting on and off.
+- **Max file size** is now enforced: files above the limit are skipped by editor highlighting,
+  Scan File, Scan Project and scan on save.
+- **Scan changed file on save** now runs the file scan when a supported file is saved and updates
+  the VulnSpeed tool window (without stealing focus).
+
+### Removed
+- The telemetry switch — VulnSpeed never collected telemetry and, as a free open-source plugin, never will.
+- The "auto-fix suggestions" and "apply safe auto-fixes on save" switches and the unused quick-fix class
+  behind them: there is no automatic fix engine. Findings keep their fix suggestions and references.
+- The empty "VulnSpeed Security Analysis" global inspection, which never reported anything.
+
 ## [2026.9.0] - 2026-11-11
 
 ### Changed
