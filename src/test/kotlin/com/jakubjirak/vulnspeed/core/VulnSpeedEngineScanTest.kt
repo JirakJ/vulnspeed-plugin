@@ -32,24 +32,24 @@ class VulnSpeedEngineScanTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun scan(content: String, rule: Rule = testRule): List<Vulnerability> {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
+        val method: Method = RuleScanner::class.java.getDeclaredMethod(
             "scanWithRule", String::class.java, String::class.java, Rule::class.java, String::class.java
         )
         method.isAccessible = true
-        return method.invoke(engine, content, "/test/File.java", rule, "java") as List<Vulnerability>
+        return method.invoke(engine.scanner, content, "/test/File.java", rule, "java") as List<Vulnerability>
     }
 
     private fun invokeParseVulnType(ruleId: String): VulnerabilityType {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod("parseVulnType", String::class.java)
+        val method: Method = RuleScanner::class.java.getDeclaredMethod("parseVulnType", String::class.java)
         method.isAccessible = true
-        return method.invoke(engine, ruleId) as VulnerabilityType
+        return method.invoke(engine.scanner, ruleId) as VulnerabilityType
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun defaultRules(): List<Rule> {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod("loadDefaultRules")
+        val method: Method = RuleScanner::class.java.getDeclaredMethod("loadDefaultRules")
         method.isAccessible = true
-        return method.invoke(engine) as List<Rule>
+        return method.invoke(engine.scanner) as List<Rule>
     }
 
     // --- regression: snippet extraction at line start ---

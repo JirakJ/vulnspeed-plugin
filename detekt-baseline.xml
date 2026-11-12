@@ -2,17 +2,16 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComplexCondition:VulnSpeedEngine.kt$VulnSpeedEngine$file.isDirectory &amp;&amp; !file.name.startsWith(".") &amp;&amp; file.name != "node_modules" &amp;&amp; file.name != "build"</ID>
     <ID>CyclomaticComplexMethod:EnrichedMarkdownReporter.kt$EnrichedMarkdownReporter$fun render( enriched: List&lt;EnrichedVulnerability>, title: String = "VulnSpeed — CVE Enrichment Report", toolVersion: String = "unknown", generatedAt: Instant = Instant.now(), ): String</ID>
     <ID>CyclomaticComplexMethod:FeedParsers.kt$FeedParsers$fun parseOsv(json: String): CveMetadata</ID>
+    <ID>CyclomaticComplexMethod:RuleScanner.kt$RuleScanner$private fun generateFixSuggestion(rule: Rule): FixSuggestion?</ID>
+    <ID>CyclomaticComplexMethod:RuleScanner.kt$RuleScanner$private fun parseVulnType(ruleId: String): VulnerabilityType</ID>
     <ID>CyclomaticComplexMethod:VulnBaselineCli.kt$VulnBaselineCli.Args.Companion$fun parse(argv: Array&lt;String>): Args</ID>
-    <ID>CyclomaticComplexMethod:VulnSpeedEngine.kt$VulnSpeedEngine$private fun generateFixSuggestion(rule: Rule): FixSuggestion?</ID>
-    <ID>CyclomaticComplexMethod:VulnSpeedEngine.kt$VulnSpeedEngine$private fun parseVulnType(ruleId: String): VulnerabilityType</ID>
-    <ID>LargeClass:VulnSpeedEngine.kt$VulnSpeedEngine : AutoCloseable</ID>
+    <ID>LargeClass:RuleScanner.kt$RuleScanner</ID>
     <ID>LongMethod:EnrichedMarkdownReporter.kt$EnrichedMarkdownReporter$fun render( enriched: List&lt;EnrichedVulnerability>, title: String = "VulnSpeed — CVE Enrichment Report", toolVersion: String = "unknown", generatedAt: Instant = Instant.now(), ): String</ID>
-    <ID>LongMethod:VulnSpeedEngine.kt$VulnSpeedEngine$private fun generateFixSuggestion(rule: Rule): FixSuggestion?</ID>
-    <ID>LongMethod:VulnSpeedEngine.kt$VulnSpeedEngine$private fun loadDefaultRules(): List&lt;Rule></ID>
-    <ID>LongMethod:VulnSpeedEngine.kt$VulnSpeedEngine$private fun parseVulnType(ruleId: String): VulnerabilityType</ID>
+    <ID>LongMethod:RuleScanner.kt$RuleScanner$private fun generateFixSuggestion(rule: Rule): FixSuggestion?</ID>
+    <ID>LongMethod:RuleScanner.kt$RuleScanner$private fun loadDefaultRules(): List&lt;Rule></ID>
+    <ID>LongMethod:RuleScanner.kt$RuleScanner$private fun parseVulnType(ruleId: String): VulnerabilityType</ID>
     <ID>LongParameterList:CycloneDxSbomExporterTest.kt$CycloneDxSbomExporterTest$( ruleId: String = "SQLI-001", severity: Severity = Severity.HIGH, cwe: Int = 89, filePath: String = "/proj/src/Foo.java", message: String = "SQL injection", fix: FixSuggestion? = null, tags: List&lt;String> = emptyList() )</ID>
     <ID>LongParameterList:HtmlReportExporterTest.kt$HtmlReportExporterTest$( ruleId: String = "SQL_001", ruleName: String = "SQL Injection", severity: Severity = Severity.CRITICAL, message: String = "User input concatenated into SQL", snippet: String = "query + userId", file: String = "/src/Main.java", line: Int = 42 )</ID>
     <ID>LongParameterList:SarifReportExporter.kt$SarifReportExporter$( sb: StringBuilder, findings: List&lt;Vulnerability>, rules: List&lt;SarifRule>, ruleIndexById: Map&lt;String, Int>, toolVersion: String, projectRoot: String )</ID>

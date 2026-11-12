@@ -21,9 +21,9 @@ import java.nio.file.Paths
  * Findings loader/writer for the CLI.
  *
  * The on-disk format is a JSON array of [Vulnerability] records matching the
- * shape used everywhere else in VulnSpeed. Intended to be produced by CI jobs
- * from the latest scan (`.idea/vulnspeed-findings.json` or similar) and then
- * consumed by the [VulnBaselineCli].
+ * shape used everywhere else in VulnSpeed. Written by `vulnspeed scan --out-json`
+ * (headless) and by Tools → VulnSpeed → Export Findings JSON (IDE); read by the
+ * `baseline` ([VulnBaselineCli]) and `enrich` commands.
  */
 object VulnFindingsJson {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create()

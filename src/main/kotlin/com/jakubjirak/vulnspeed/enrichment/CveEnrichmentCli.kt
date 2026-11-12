@@ -129,7 +129,7 @@ object CveEnrichmentCli {
         return Paths.get(home, ".vulnspeed", "cve-cache")
     }
 
-    private fun defaultEnricher(policy: EnrichmentPolicy, cacheDir: Path): CveEnricher {
+    internal fun defaultEnricher(policy: EnrichmentPolicy, cacheDir: Path): CveEnricher {
         val cache = CveMetadataCache(cacheDir)
         val osv = OsvClient(policy = policy)
         val nvd = NvdClient(policy = policy)

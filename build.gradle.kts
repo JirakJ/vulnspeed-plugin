@@ -18,7 +18,13 @@ repositories {
     }
 }
 
+// Runtime classpath of the standalone CLI jar (the IDE provides these to the plugin).
+val cliRuntime: Configuration by configurations.creating
+
 dependencies {
+    cliRuntime("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}")
+    cliRuntime(libs.gson)
+
     intellijPlatform {
         create(
             providers.gradleProperty("platformType"),
@@ -32,7 +38,7 @@ dependencies {
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.code.gson:gson:2.10.1")
+    testImplementation(libs.gson)
 }
 
 // Exclude IDE-provided libraries from plugin distribution
@@ -80,9 +86,51 @@ intellijPlatform {
     }
 }
 
+// Standalone CLI: platform-free classes + Kotlin stdlib + Gson, `java -jar vulnspeed-cli-<version>.jar`.
+val cliJar by tasks.registering(Jar::class) {
+    group = "build"
+    description = "Builds the self-contained VulnSpeed CLI jar (scan | baseline | enrich)."
+    archiveBaseName.set("vulnspeed-cli")
+    archiveVersion.set(project.version.toString())
+    destinationDirectory.set(layout.buildDirectory.dir("cli"))
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(sourceSets.main.get().output.classesDirs) {
+        include("com/jakubjirak/vulnspeed/cli/**")
+        include("com/jakubjirak/vulnspeed/model/**")
+        include("com/jakubjirak/vulnspeed/core/**")
+        include("com/jakubjirak/vulnspeed/baseline/**")
+        include("com/jakubjirak/vulnspeed/enrichment/**")
+        include("com/jakubjirak/vulnspeed/report/SarifReportExporter*")
+        // IntelliJ-bound classes stay in the plugin only.
+        exclude("com/jakubjirak/vulnspeed/core/VulnSpeedEngine*")
+        exclude("**/*Action.class", "**/*Action$*.class", "**/*ActionKt*.class", "**/*Dialog*.class")
+    }
+    from(cliRuntime.map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/*.kotlin_module")
+        exclude("module-info.class", "META-INF/versions/*/module-info.class", "META-INF/maven/**")
+        // Compile-time-only annotations pulled in by kotlin-stdlib.
+        exclude("org/intellij/**", "org/jetbrains/annotations/**")
+    }
+    from(files("LICENSE", "NOTICE")) { into("META-INF") }
+    manifest {
+        attributes(
+            "Main-Class" to "com.jakubjirak.vulnspeed.cli.VulnSpeedCli",
+            "Implementation-Title" to "VulnSpeed CLI",
+            "Implementation-Version" to project.version.toString(),
+        )
+    }
+}
+
 tasks {
     test {
         useJUnitPlatform()
+        dependsOn(cliJar)
+        systemProperty("vulnspeed.cliJar", cliJar.get().archiveFile.get().asFile.absolutePath)
+    }
+
+    assemble {
+        dependsOn(cliJar)
     }
 
     wrapper {

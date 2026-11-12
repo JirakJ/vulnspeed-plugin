@@ -6,6 +6,18 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 
 ## [Unreleased]
 
+### Added
+- **Standalone CLI** `vulnspeed-cli-<version>.jar`, attached to every GitHub release: `java -jar vulnspeed-cli.jar scan|baseline|enrich`.
+  `scan --project=<dir> --out-json=<file> --out-sarif=<file> [--fail-on=severity:HIGH]` runs the plugin's rules without an IDE,
+  with the same max file size, `vulnspeed-ignore` comments and excluded directories.
+- **Tools → VulnSpeed → Export Findings JSON** writes the latest scan in the format the `baseline` and `enrich` commands read.
+
+### Fixed
+- README CI examples called a `./gradlew vulnspeedScan` task that never existed and fed the baseline / enrichment CLIs a
+  findings file nothing produced. They now download the CLI jar from the GitHub release and run it; the enrichment flags
+  table lists the flags that actually exist.
+- A project located in a hidden (dot-prefixed) directory is now scanned by Scan Project.
+
 ## [2026.9.1] - 2026-11-12
 
 ### Fixed
