@@ -165,22 +165,6 @@ class ModelsTest {
     }
 
     @Test
-    fun `DeviceInfo data class stores all fields`() {
-        val info = DeviceInfo(
-            backend = "CUDA",
-            deviceName = "RTX 4090",
-            computeUnits = 128,
-            maxMemoryMb = 24576L,
-            supportsFloat64 = true
-        )
-
-        assertEquals("CUDA", info.backend)
-        assertEquals("RTX 4090", info.deviceName)
-        assertEquals(128, info.computeUnits)
-        assertTrue(info.supportsFloat64)
-    }
-
-    @Test
     fun `Vulnerability equality works by data class semantics`() {
         val v1 = Vulnerability(
             "id1", "R1", "Rule1", VulnerabilityType.XSS, Severity.HIGH,

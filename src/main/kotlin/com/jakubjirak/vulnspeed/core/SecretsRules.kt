@@ -12,6 +12,8 @@ import com.jakubjirak.vulnspeed.model.Severity
  *
  * Each pattern targets a vendor-specific token format with a distinctive prefix,
  * so false-positive rates stay near zero — unlike generic entropy heuristics.
+ * Secret rules run on every scanned file type and also inside comments: a key
+ * pasted into a comment leaks just the same.
  */
 object SecretsRules {
 
@@ -27,6 +29,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\b(A3T[A-Z0-9]|AKIA|ASIA|AGPA|AROA|AIPA|ANPA|ANVA)[A-Z0-9]{16}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_GITHUB_001",
@@ -36,6 +39,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bgh[pousr]_[A-Za-z0-9]{36,}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_GITLAB_001",
@@ -45,6 +49,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bglpat-[A-Za-z0-9_\-]{20,}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_SLACK_001",
@@ -54,6 +59,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bxox[baprs]-[A-Za-z0-9\-]{10,}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_STRIPE_001",
@@ -63,6 +69,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\b[sr]k_live_[A-Za-z0-9]{20,}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_GOOGLE_001",
@@ -72,6 +79,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bAIza[0-9A-Za-z_\-]{35}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_PEM_001",
@@ -81,6 +89,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY( BLOCK)?-----""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_NPM_001",
@@ -90,6 +99,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bnpm_[A-Za-z0-9]{36}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_SENDGRID_001",
@@ -99,6 +109,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bSG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_TWILIO_001",
@@ -108,6 +119,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\bSK[0-9a-fA-F]{32}\b""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_URL_001",
@@ -118,6 +130,10 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """[a-zA-Z][a-zA-Z0-9+.\-]*://[^/\s:@'"]{1,64}:[^/\s:@'"]{1,128}@""",
+            // Documentation placeholders such as user:password@, user:${PASS}@ or user:<pass>@ are not leaks.
+            excludePattern = """://[^/\s:@'"]*:(?:\$\{[^}]*\}|\$\w+|<[^>]*>|\{[^}]*\}|%[sv(]|\*+|x+|pass(?:word)?|secret|changeme|""" +
+                """your[-_]?password)@""",
+            matchAnywhere = true,
         ),
         Rule(
             id = "SECRET_JWT_001",
@@ -127,6 +143,7 @@ object SecretsRules {
             cwe = 798,
             owasp = OWASP,
             pattern = """\beyJ[A-Za-z0-9_\-]{10,}\.eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}""",
+            matchAnywhere = true,
         ),
     )
 }
