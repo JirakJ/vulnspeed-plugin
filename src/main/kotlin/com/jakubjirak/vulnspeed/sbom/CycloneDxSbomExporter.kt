@@ -66,6 +66,8 @@ class CycloneDxSbomExporter {
             .sorted()
             .joinToString("\n")
             .ifEmpty { "vulnspeed-empty-bom" }
+        // UUIDv5 is defined over SHA-1 (RFC 4122); this is a name hash, not a security control.
+        // vulnspeed-ignore: CRYPTO_001
         val sha1 = MessageDigest.getInstance("SHA-1")
             .digest(payload.toByteArray(StandardCharsets.UTF_8))
         sha1[6] = ((sha1[6].toInt() and 0x0F) or 0x50).toByte()

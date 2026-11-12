@@ -6,6 +6,64 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 
 ## [Unreleased]
 
+## [2026.10.0] - 2026-11-12
+
+### Changed
+- **Rule precision overhaul.** Every rule is now scoped to the languages / file types where it is
+  meaningful, anchored on a concrete API or syntax, and skips comment lines, block comments,
+  KDoc / Javadoc, Python docstrings and lines longer than 1,000 characters (minified code); secret
+  rules still match everywhere. Ambiguous rules require file context (`requiresInFile`) or are
+  skipped when the file shows the hardening (`excludeIfFileContains`); credential, TLS, randomness,
+  CSRF, cookie, debug-mode and DOM-XSS rules skip test sources. A rule reports a line once, and
+  same-CWE findings on one line keep only the most severe.
+- Findings before → after (CLI defaults):
+
+  | Project | 2026.9.2 | 2026.10.0 |
+  |---|---:|---:|
+  | VulnSpeed `src/` (incl. deliberately vulnerable test fixtures) | 1,157 | 31 |
+  | VulnSpeed `src/main` | 850 | 0 |
+  | spring-projects/spring-petclinic @500158f | 205 | 4 |
+  | expressjs/express @43fca52 | 1,104 | 2 |
+  | pallets/flask @49943b5 | 1,507 | 1 |
+  | we45/Vulnerable-Flask-App @b6a4f97 | 385 | 9 |
+  | OWASP/NodeGoat @c5cb68a | 377 | 9 |
+
+  Top offenders that are gone: `INPUT_005` (890), `INPUT_004` (868), `TERRAFORM_001` (761),
+  `NODE_001` (680), `PERF_007` (165), `SERIAL_006` (146), `SESSION_007` (138), `ATTACK_006` (112),
+  `LAMBDA_004` (91), `SPRING_006` (88), `GITLAB_001` (87), `DOCKER_004` (28). On the two
+  intentionally vulnerable apps all ten planted issues checked are reported (2026.9.2: three).
+- Rules kept their ids where the intent is the same (`SQL_001`, `XSS_001`, `CRYPTO_001`, `CMD_001`, …),
+  so existing `vulnspeed-ignore` comments and baselines keep working for them.
+- Fix suggestions are now specific to each rule family (e.g. container hardening for Docker rules,
+  bounded string functions for C rules) instead of generic boilerplate.
+- Plugin renamed from "VulnSpeed - GPU-Accelerated SAST" to **"VulnSpeed - Fast Regex SAST"**
+  (plugin id unchanged); the plugin description now describes the pattern-based engine honestly.
+
+### Added
+- Rules for Python string-formatted / f-string SQL, JS template-literal and Kotlin-template SQL,
+  Go `fmt.Sprintf` SQL, Python `shell=True`, Go `exec.Command("sh", "-c", …)`, C `system()` /
+  format strings, server-side JS `eval(req…)`, Jinja2 SSTI and `autoescape=False`, `Markup(f"…")`,
+  servlet reflected XSS, Angular `bypassSecurityTrust*`, tar slip, MongoDB `$where`, Docker
+  (`:latest`, `USER root`, `curl | sh`, secrets in `ENV`/`ARG`), Kubernetes / Compose (privileged,
+  privilege escalation, host namespaces, mounted Docker socket), IAM `Action: "*"` and hard-coded
+  secrets in YAML / `.properties`.
+- Scan Project and the CLI now also scan `Dockerfile`s, `*.yml` / `*.yaml`, `*.properties`,
+  `.mjs` / `.cjs` / `.jsx` / `.mts` / `.cts` / `.tsx` and `.hpp` / `.hh` / `.hxx` C++ headers.
+- Per-rule positive and negative samples for every rule (`src/test/resources/rule-samples.txt`) and a
+  regression test that keeps the self-scan of `src/main` within a fixed budget.
+
+### Removed
+- 182 of 266 non-secret rules (84 remain, plus the 12 secret rules): duplicates were merged, and
+  rules a line regex cannot judge were dropped — "annotation X without Y" heuristics (missing
+  `@Valid`, `@RateLimit`, `@PreAuthorize`, circuit breakers, timeouts, pagination), code-quality and
+  performance rules (`QUALITY_*`, `PERF_*`, `INPUT_*`, `KOTLIN_*`, `REACT_*`), compliance keyword
+  rules (`GDPR_001/002`, `HIPAA_001`, `PRIVACY_*`) and rules for file types VulnSpeed never scans
+  (Terraform, PHP, HTML / Vue templates, Firestore rules, GitHub Actions in `.github/`).
+- `vendor/`, `dist/`, `target/`, `out/`, `__pycache__/`, `venv/`, `site-packages/` and minified bundles
+  (`*.min.js`, `*-min.js`, `*.bundle.js`) are no longer scanned.
+- The leftover GPU "What's New" claims in the plugin change notes, the unused `DeviceInfo` GPU model
+  class, and the settings screenshot that still showed the removed auto-fix and telemetry switches.
+
 ## [2026.9.2] - 2026-11-12
 
 ### Added

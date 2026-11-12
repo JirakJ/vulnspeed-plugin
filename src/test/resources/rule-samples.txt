@@ -1,0 +1,606 @@
+# Positive (+) and negative (-) samples for every built-in rule, used by BuiltInRulesTest.
+#
+#   ### RULE_ID            starts a rule block
+#   file: <relative path>  file the following samples are scanned as (sets the language / test-file flag)
+#   + <content>            must produce a finding of RULE_ID
+#   - <content>            must NOT produce a finding of RULE_ID
+#
+# A literal \n inside a sample is a line break, so one sample can carry file context.
+# Every rule needs at least one + and one - sample (enforced by the test).
+
+### SECRET_AWS_001
+file: src/App.java
++ String key = "AKIAIOSFODNN7EXAMPLE";
++ // old key: AKIAIOSFODNN7EXAMPLE
+- String key = "AKIA_NOT_A_KEY";
+
+### SECRET_GITHUB_001
+file: app.py
++ token = "ghp_0123456789abcdefghijABCDEFGHIJ123456"
+- token = "ghp_short"
+
+### SECRET_GITLAB_001
+file: deploy.yaml
++ token: glpat-AbCdEfGhIjKlMnOpQrSt
+- token_ref: glpat-short
+
+### SECRET_SLACK_001
+file: app.js
++ const t = "xoxb-123456789012-ABCdefGHIjkl";
+- const t = "xoxb-1";
+
+### SECRET_STRIPE_001
+file: app.ts
++ const key = "sk_live_4eC39HqLyjWDarjtT1zdp7dc";
+- const key = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
+
+### SECRET_GOOGLE_001
+file: src/App.kt
++ val key = "AIzaSyA-1234567890abcdefghijklmnopqrstu"
+- val key = "AIzaShort"
+
+### SECRET_PEM_001
+file: src/App.kt
++ val pem = "-----BEGIN RSA PRIVATE KEY-----"
+- val pem = "-----BEGIN PUBLIC KEY-----"
+
+### SECRET_NPM_001
+file: app.js
++ const t = "npm_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789";
+- run("npm_install");
+
+### SECRET_SENDGRID_001
+file: app.py
++ KEY = "SG.aBcDeFgHiJkLmNoPqRsTuV.aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789aBcDeF0"
+- KEY = "SG.short.key"
+
+### SECRET_TWILIO_001
+file: app.py
++ sid = "SK0123456789abcdef0123456789abcdef"
+- sid = "SK0123"
+
+### SECRET_URL_001
+file: app.py
++ url = "https://admin:hunter2@db.internal/app"
+- url = "postgres://user:${DB_PASSWORD}@localhost/db"
+- url = "postgres://user:password@localhost/db"
+
+### SECRET_JWT_001
+file: app.js
++ const t = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+- const t = "eyJhbGciOiJIUzI1NiJ9";
+
+### SQL_001
+file: src/App.java
++ String q = "SELECT * FROM users WHERE id = " + userId;
++ sql += " WHERE name = '" + name + "'";
+- String q = "SELECT * FROM users WHERE id = ?";
+- String msg = "Please select a file from " + dir;
+- // String q = "SELECT * FROM users WHERE id = " + userId;
+file: app.py
++ q = "select name, email from users where id = " + uid
+- q = "select name, email from users where id = %s"
+
+### SQL_002
+file: src/Repo.java
++ em.createQuery("from User where name = '" + name + "'");
+- em.createQuery("from User where name = :name").setParameter("name", name);
+
+### SQL_003
+file: app.js
++ return { $where: `this.userId == ${userId}` };
+- return { userId: parseInt(userId, 10) };
+
+### SQL_004
+file: app.py
++ cur.execute(f"SELECT * FROM users WHERE id = {user_id}")
++ q = "SELECT a, b FROM t WHERE u = '%s';" % term
++ q = "DELETE FROM t WHERE id = {}".format(x)
+- cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+
+### SQL_005
+file: app.ts
++ db.query(`SELECT * FROM users WHERE id = ${id}`);
+- const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
+- db.query("SELECT * FROM users WHERE id = $1", [id]);
+file: src/Repo.kt
++ val q = "SELECT * FROM users WHERE id = $id"
+- val q = "SELECT * FROM users WHERE id = ?"
+
+### SQL_006
+file: main.go
++ q := fmt.Sprintf("SELECT * FROM users WHERE name = '%s'", name)
+- rows, err := db.Query("SELECT * FROM users WHERE name = $1", name)
+file: src/App.java
++ String q = String.format("SELECT * FROM t WHERE id = %s", id);
+
+### NODE_002
+file: app.js
++ users.find(req.body).toArray();
+- users.find({ name: String(req.body.name) });
+
+### PRISMA_001
+file: app.ts
++ await prisma.$executeRawUnsafe(query + suffix);
+- await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id}`;
+
+### SEQUELIZE_001
+file: app.js
++ sequelize.query(`${base} ORDER BY ${column}`);
+- sequelize.query("SELECT * FROM users WHERE id = :id", { replacements: { id } });
+
+### TYPEORM_001
+file: repo.ts
++ import { DataSource } from "typeorm";\nqb.where(`user.name = '${name}'`);
+- import { DataSource } from "typeorm";\nqb.where("user.name = :name", { name });
+- qb.where(`user.name = '${name}'`);
+
+### CMD_001
+file: src/App.java
++ Runtime.getRuntime().exec("ping " + host);
+- Runtime.getRuntime().exec(new String[]{"ping", "-c", "1", host});
+
+### CMD_002
+file: src/App.java
++ new ProcessBuilder("sh", "-c", command).start();
++ new ProcessBuilder("git log " + ref).start();
+- new ProcessBuilder("git", "log", ref).start();
+
+### CMD_003
+file: app.py
++ os.system("rm -rf " + path)
++ subprocess.run(f"convert {src} {dst}", shell=True)
+- subprocess.run(["convert", src, dst], check=True)
+
+### CMD_004
+file: app.py
++ subprocess.call(cmd, shell=True)
+- subprocess.call(["ls", "-l"])
+
+### CMD_005
+file: main.go
++ out, err := exec.Command("sh", "-c", cmd).Output()
+- out, err := exec.Command("tar", "-xf", name).Output()
+
+### CMD_006
+file: main.c
++ system(cmd);
+- system("ls -l");
+
+### JS_003
+file: app.js
++ child_process.exec(`git log ${branch}`, cb);
++ exec("ping -c 1 " + host, cb);
+- execFile("ping", ["-c", "1", host], cb);
+- const m = /(\d+)/.exec("abc" + suffix);
+
+### PYTHON_002
+file: app.py
++ result = eval(request.args.get("expr"))
+- value = ast.literal_eval(request.args.get("expr"))
+
+### JS_004
+file: app.js
++ const preTax = eval(req.body.preTax);
+- const preTax = parseInt(req.body.preTax, 10);
+
+### SCRIPT_001
+file: src/App.java
++ ScriptEngine engine = manager.getEngineByName("js");\nengine.eval("var x = " + input);
+- ScriptEngine engine = manager.getEngineByName("js");\nengine.eval(CONSTANT_SCRIPT);
+- calculator.eval("1 + " + x);
+
+### EXPR_001
+file: src/App.java
++ Expression exp = parser.parseExpression("name == '" + input + "'");
+- Expression exp = parser.parseExpression("name == #input");
+
+### ATTACK_001
+file: app.py
++ return render_template_string(template, user=user)
++ return render_template_string("<h1>" + name + "</h1>")
+- return render_template_string("<h1>{{ name }}</h1>", name=name)
+- return render_template("index.html", name=name)
+
+### LDAP_001
+file: src/App.java
++ DirContext ctx = new InitialDirContext(env);\nctx.search(base, "(uid=" + user + ")", controls);
+- DirContext ctx = new InitialDirContext(env);\nctx.search(base, "(uid={0})", new Object[]{user}, controls);
+
+### XPATH_001
+file: src/App.java
++ XPath xpath = factory.newXPath();\nxpath.evaluate("//user[name='" + name + "']", doc);
+- XPath xpath = factory.newXPath();\nxpath.evaluate("//user[name=$name]", doc);
+
+### REFLECT_001
+file: src/App.java
++ Class<?> c = Class.forName(request.getParameter("type"));
+- Class<?> c = Class.forName("com.example.Handler");
+
+### REGEX_001
+file: app.py
++ EMAIL = re.compile(r"^([a-zA-Z0-9]+)*@example\.com$")
+- EMAIL = re.compile(r"^[a-zA-Z0-9]+@example\.com$")
+file: app.js
++ const re = new RegExp("(a+)+$");
+- const re = new RegExp("a+$");
+
+### DESER_001
+file: src/App.java
++ ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+- ObjectInputStream in = new ObjectInputStream(stream);\nin.setObjectInputFilter(filter);
+file: src/test/java/AppTest.java
+- ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+### DESER_002
+file: app.py
++ data = yaml.load(stream)
+- data = yaml.load(stream, Loader=yaml.SafeLoader)
+- data = yaml.safe_load(stream)
+
+### SERIAL_003
+file: src/App.java
++ Yaml yaml = new Yaml();\nObject obj = yaml.load(input);
+- Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));\nObject obj = yaml.load(input);
+
+### PYTHON_001
+file: app.py
++ obj = pickle.loads(request.data)
+- obj = json.loads(request.data)
+
+### SERIAL_004
+file: src/App.java
++ mapper.enableDefaultTyping();
++ @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+- @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+
+### XXE_001
+file: src/App.java
++ DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+- DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+### CRYPTO_001
+file: src/App.java
++ MessageDigest md = MessageDigest.getInstance("MD5");
+- MessageDigest md = MessageDigest.getInstance("SHA-256");
+file: app.py
++ h = hashlib.md5(data).hexdigest()
+- h = hashlib.md5(data, usedforsecurity=False).hexdigest()
+
+### CRYPTO_002
+file: src/App.java
++ Cipher c = Cipher.getInstance("DES/CBC/PKCS5Padding");
++ Cipher c = Cipher.getInstance("AES");
++ Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+- Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+file: app.py
++ cipher = AES.new(key, AES.MODE_ECB)
+- cipher = AES.new(key, AES.MODE_GCM)
+
+### CRYPTO_003
+file: src/App.java
++ SecretKeySpec key = new SecretKeySpec("0123456789abcdef".getBytes(), "AES");
+- SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+
+### CRYPTO_004
+file: src/App.java
++ SSLContext ctx = SSLContext.getInstance("TLSv1");
+- SSLContext ctx = SSLContext.getInstance("TLSv1.3");
+file: app.py
++ ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+- ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+### CRYPTO_005
+file: app.py
++ r = requests.get(url, verify=False)
+- r = requests.get(url, verify=True)
+file: app.js
++ const agent = new https.Agent({ rejectUnauthorized: false });
+file: main.go
++ tlsConfig := &tls.Config{InsecureSkipVerify: true}
+file: tests/test_client.py
+- r = requests.get(url, verify=False)
+
+### CRYPTO_BASIC_001
+file: src/App.java
++ String token = Long.toString(new Random().nextLong());
+- double jitter = new Random().nextDouble();
+file: app.js
++ const resetToken = Math.random().toString(36).slice(2);
+file: app.py
++ otp = random.randint(100000, 999999)
+- token = secrets.token_hex(16)
+
+### CRYPTO_006
+file: src/App.java
++ KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");\nkpg.initialize(1024);
+- KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");\nkpg.initialize(3072);
+file: app.py
++ key = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+- key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
+
+### CRYPTO_008
+file: src/App.java
++ PBEKeySpec spec = new PBEKeySpec(password, salt, 1000, 256);
+- PBEKeySpec spec = new PBEKeySpec(password, salt, 600000, 256);
+file: app.py
++ dk = hashlib.pbkdf2_hmac("sha256", pw, salt, 1000)
+- dk = hashlib.pbkdf2_hmac("sha256", pw, salt, 600000)
+
+### JWT_001
+file: app.py
++ payload = jwt.decode(token, verify=False)
++ payload = jwt.decode(token, key, algorithms=["none"])
+- payload = jwt.decode(token, key, algorithms=["HS256"])
+
+### AUTH_001
+file: src/App.java
++ String password = "Sup3rS3cret!";
+- String password = System.getenv("DB_PASSWORD");
+- String password = "changeme";
+- String password = "PASSWORD_FIELD";
+file: app.py
++ API_KEY = "a1b2c3d4e5f6"
+file: src/test/java/AppTest.java
+- String password = "Sup3rS3cret!";
+
+### CONFIG_001
+file: application.properties
++ spring.datasource.password=s3cr3tPass
+- spring.datasource.password=${DB_PASSWORD}
+file: docker-compose.yml
++       - POSTGRES_PASSWORD=petclinic
+- password: changeme
+
+### PCI_001
+file: src/App.java
++ String cardNumber = "4111111111111111";
+- String cardNumber = request.getParameter("card");
+
+### DOCKER_002
+file: Dockerfile
++ ENV DB_PASSWORD=supersecret
++ ARG NPM_TOKEN=abc123def
+- ARG NPM_TOKEN
+- ENV DB_PASSWORD=$DB_PASSWORD
+
+### GDPR_003
+file: src/App.java
++ log.info("Login for " + user + " with " + password);
+- log.info("Password reset requested for {}", user);
+
+### XSS_001
+file: app.js
++ el.innerHTML = userInput;
++ el.innerHTML = `<b>${name}</b>`;
+- el.innerHTML = "<b>static</b>";
+- el.innerHTML = DOMPurify.sanitize(userInput);
+file: test/app.test.js
+- el.innerHTML = userInput;
+
+### XSS_002
+file: app.js
++ document.write("<a href='" + location.hash + "'>");
+- document.write("<p>static</p>");
+
+### XSS_003
+file: Comment.tsx
++ return <div dangerouslySetInnerHTML={{ __html: comment.body }} />;
+- return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.body) }} />;
+
+### XSS_004
+file: app.py
++ return Markup(f"<b>{name}</b>")
+- return Markup("<b>static</b>")
+
+### XSS_005
+file: src/App.java
++ response.getWriter().println("Hello " + request.getParameter("name"));
+- response.getWriter().println("Hello " + Encode.forHtml(name));
+
+### XSS_006
+file: app.py
++ env = Environment(loader=FileSystemLoader("t"), autoescape=False)
+- env = Environment(loader=FileSystemLoader("t"), autoescape=True)
+
+### ANGULAR_001
+file: app.ts
++ this.html = this.sanitizer.bypassSecurityTrustHtml(userHtml);
+- this.html = this.sanitizer.bypassSecurityTrustHtml('<b>static</b>');
+
+### REDIRECT_001
+file: app.js
++ return res.redirect(req.query.url);
+- return res.redirect("/login");
+file: src/App.java
++ response.sendRedirect(request.getParameter("next"));
+file: app.py
++ return redirect(request.args.get("next"))
+- return redirect(url_for("index"))
+
+### SSRF_001
+file: app.py
++ r = requests.get(request.args["url"])
+- r = requests.get("https://api.example.com/v1/items")
+file: app.js
++ const r = await axios.get(req.query.url);
+
+### CORS_001
+file: src/App.java
++ response.setHeader("Access-Control-Allow-Origin", "*");
++ @CrossOrigin(origins = "*")
+- @CrossOrigin(origins = "https://app.example.com")
+file: app.js
++ app.use(cors({ origin: "*" }));
+- app.use(cors({ origin: "https://app.example.com" }));
+
+### CSRF_001
+file: src/SecurityConfig.java
++ http.csrf().disable();
++ http.csrf(csrf -> csrf.disable());
+- http.csrf(Customizer.withDefaults());
+file: app.py
++ app.config["WTF_CSRF_ENABLED"] = False
+file: tests/conftest.py
+- app.config["WTF_CSRF_ENABLED"] = False
+
+### COOKIE_001
+file: src/App.java
++ Cookie cookie = new Cookie("session", id);\ncookie.setHttpOnly(false);
+- Cookie cookie = new Cookie("session", id);\ncookie.setHttpOnly(true);
+file: app.js
++ app.use(session({ cookie: { httpOnly: false } }));
+- const config = { secure: false };
+
+### API_010
+file: app.js
++ localStorage.setItem("authToken", token);
+- localStorage.setItem("theme", "dark");
+
+### OAUTH_003
+file: app.js
++ const url = `${issuer}/authorize?response_type=token&client_id=${id}`;
+- const url = `${issuer}/authorize?response_type=code&client_id=${id}`;
+
+### GRAPHQL_002
+file: server.js
++ const server = new ApolloServer({ typeDefs, resolvers, introspection: true });
+- const server = new ApolloServer({ typeDefs, resolvers, introspection: false });
+
+### SPRING_001
+file: src/SecurityConfig.java
++ http.authorizeHttpRequests(a -> a.anyRequest().permitAll());
+- http.authorizeHttpRequests(a -> a.requestMatchers("/public/**").permitAll().anyRequest().authenticated());
+
+### SPRING_003
+file: application.properties
++ management.endpoints.web.exposure.include=*
+- management.endpoints.web.exposure.include=health,info
+file: application.yml
++ management:\n  endpoints:\n    web:\n      exposure:\n        include: "*"
+- logging:\n  include: "*"
+
+### PYTHON_003
+file: app.py
++ app.run(host="0.0.0.0", debug=True)
+- app.run(host="0.0.0.0", debug=False)
+- # app.run(debug=True)
+file: settings.py
++ DEBUG = True
+
+### DOCKER_001
+file: Dockerfile
++ FROM node:latest
+- FROM node:20.11.1-alpine
+
+### DOCKER_005
+file: Dockerfile
++ USER root
+- USER app
+
+### DOCKER_006
+file: Dockerfile
++ RUN curl -fsSL https://example.com/install.sh | sh
+- RUN curl -fsSL -o install.sh https://example.com/install.sh && sha256sum -c install.sh.sha256
+
+### K8S_005
+file: deploy.yaml
++       privileged: true
+- # privileged: true
+- privileged: false
+
+### K8S_006
+file: deploy.yaml
++   allowPrivilegeEscalation: true
+-   allowPrivilegeEscalation: false
+
+### K8S_007
+file: deploy.yaml
++   hostNetwork: true
+-   hostNetwork: false
+file: docker-compose.yml
++   network_mode: host
+
+### CONTAINER_001
+file: docker-compose.yml
++       - /var/run/docker.sock:/var/run/docker.sock
+- # never mount /var/run/docker.sock
+-       - ./data:/data
+
+### ISTIO_001
+file: peer.yaml
++ kind: PeerAuthentication\nspec:\n  mtls:\n    mode: PERMISSIVE
+- kind: PeerAuthentication\nspec:\n  mtls:\n    mode: STRICT
+
+### LAMBDA_003
+file: template.yaml
++ - Effect: Allow\n  Action: "*"\n  Resource: "*"
++ - Effect: Allow\n  Action: "s3:*"
+- - Effect: Allow\n  Action: "s3:GetObject"
+
+### CLOUD_002
+file: src/App.java
++ s3.putObject(new PutObjectRequest(bucket, key, file).withCannedAcl(CannedAccessControlList.PublicRead));
+- s3.putObject(new PutObjectRequest(bucket, key, file).withCannedAcl(CannedAccessControlList.Private));
+file: app.py
++ s3.put_object(Bucket=b, Key=k, Body=data, ACL="public-read")
+
+### PATH_001
+file: app.js
++ res.sendFile(path.join(__dirname, req.query.file));
+- res.sendFile(path.join(__dirname, "public", "index.html"));
+file: src/App.java
++ File f = new File(base, request.getParameter("name"));
+file: app.py
++ return open(request.args["path"]).read()
+
+### PATH_002
+file: src/App.java
++ File out = new File(destDir, entry.getName());
+- File out = new File(destDir, entry.getName());\nif (!out.getCanonicalPath().startsWith(destDir.getCanonicalPath())) throw new IOException();
+
+### PATH_003
+file: app.py
++ import tarfile\ntarfile.open(path).extractall(dest)
+- import tarfile\ntarfile.open(path).extractall(dest, filter="data")
+
+### TEMP_001
+file: app.py
++ name = tempfile.mktemp()
+- fd, name = tempfile.mkstemp()
+
+### NET_001
+file: app.py
++ ftp = ftplib.FTP("ftp.example.com")
+- ftp = ftplib.FTP_TLS("ftp.example.com")
+
+### NET_006
+file: app.js
++ const ws = new WebSocket("ws://api.example.com/feed");
+- const ws = new WebSocket("wss://api.example.com/feed");
+- const ws = new WebSocket("ws://localhost:8080");
+
+### GRPC_001
+file: main.go
++ conn, err := grpc.Dial(addr, grpc.WithInsecure())
+- conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(creds))
+file: src/App.java
++ ManagedChannel ch = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+
+### MOBILE_002
+file: src/Prefs.kt
++ val prefs = context.getSharedPreferences("app", MODE_PRIVATE)\nprefs.edit().putString("auth_token", token).apply()
+- val prefs = context.getSharedPreferences("app", MODE_PRIVATE)\nprefs.edit().putString("theme", theme).apply()
+file: App.swift
++ UserDefaults.standard.set(token, forKey: "authToken")
+
+### BUFFER_001
+file: main.c
++ strcpy(dest, src);
+- strncpy(dest, src, sizeof dest - 1);
+
+### FORMAT_001
+file: main.c
++ printf(user_input);
++ fprintf(stderr, msg);
+- printf("%s", user_input);

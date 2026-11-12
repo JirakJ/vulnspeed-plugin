@@ -15,12 +15,20 @@ object ScanPolicy {
 
     private const val BYTES_PER_KB = 1024L
 
-    /** File extensions VulnSpeed scans (project scan and scan-on-save). */
-    val SUPPORTED_EXTENSIONS: Set<String> =
-        setOf("java", "kt", "py", "js", "ts", "swift", "cpp", "c", "h", "go", "rs")
+    /**
+     * File extensions VulnSpeed scans (project scan and scan-on-save): source code plus
+     * YAML and `.properties` configuration. Dockerfiles are recognised by name.
+     */
+    val SUPPORTED_EXTENSIONS: Set<String> = SourceLanguages.EXTENSIONS
 
-    /** Directory names never descended into by a project scan (besides hidden `.`-directories). */
-    val EXCLUDED_DIRECTORIES: Set<String> = setOf("node_modules", "build")
+    /**
+     * Directory names never descended into by a project scan (besides hidden `.`-directories):
+     * dependencies, virtual environments and build output.
+     */
+    val EXCLUDED_DIRECTORIES: Set<String> = setOf(
+        "node_modules", "bower_components", "vendor", "build", "dist", "target", "out",
+        "__pycache__", "venv", "site-packages",
+    )
 
     /** Upper bound on the number of files a single project scan covers. */
     const val MAX_FILES_PER_SCAN = 1000
@@ -34,9 +42,13 @@ object ScanPolicy {
     /** True when a file of [sizeBytes] exceeds the configured limit and must be skipped. */
     fun isTooLarge(sizeBytes: Long, maxFileSizeKb: Int): Boolean = sizeBytes > maxBytes(maxFileSizeKb)
 
-    /** True when [fileName] has an extension VulnSpeed knows how to scan. */
+    /**
+     * True when VulnSpeed knows how to scan [fileName]: a supported extension or a Dockerfile,
+     * excluding minified / bundled JavaScript (`*.min.js`, `*.bundle.js`).
+     */
     fun isSupportedFile(fileName: String): Boolean {
-        if (!fileName.contains('.')) return false
+        if (SourceLanguages.isDockerfileName(fileName)) return true
+        if (!fileName.contains('.') || SourceLanguages.isMinifiedName(fileName)) return false
         return fileName.substringAfterLast('.').lowercase() in SUPPORTED_EXTENSIONS
     }
 

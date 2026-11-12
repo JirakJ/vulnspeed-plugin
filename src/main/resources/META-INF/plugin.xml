@@ -1,22 +1,23 @@
 <idea-plugin>
     <id>com.jakubjirak.vulnspeed</id>
-    <name>VulnSpeed - GPU-Accelerated SAST</name>
+    <name>VulnSpeed - Fast Regex SAST</name>
     <vendor email="support@jakubjirak.com" url="https://jakubjirak.com">Jakub Jirak</vendor>
 
-    <description><![CDATA[<h2>VulnSpeed — SAST for Real-Time Vulnerability Detection</h2>
+    <description><![CDATA[<h2>VulnSpeed — Fast, Low-Noise Pattern-Based SAST</h2>
 
 <p>
-  Security scanning at the speed of thought. VulnSpeed detects OWASP Top 10 and CWE Top 25
-  vulnerabilities as you type across 7 languages, with remediation guidance, a security
-  baseline for differential scans, and SARIF / HTML / CycloneDX exports.
+  VulnSpeed is a lightweight static analysis scanner: a curated set of line-level regex rules,
+  each scoped to the languages and file types where it is meaningful. It highlights findings
+  as you type, explains how to fix them, and ships a CLI for CI with a security baseline and
+  SARIF / HTML / CycloneDX exports. It does not do data-flow or taint analysis.
 </p>
 
-<h3>Real-Time Detection</h3>
+<h3>Detection</h3>
 <ul>
-  <li><b>As-You-Type Scanning</b> — Vulnerabilities highlighted inline in the editor with severity levels (can be switched off; files above the configurable size limit are skipped)</li>
-  <li><b>OWASP Top 10 Coverage</b> — Injection, broken access control, cryptographic failures, SSRF, and more</li>
-  <li><b>CWE Top 25 Coverage</b> — SQL injection, XSS, OS command injection, and 22+ more</li>
-  <li><b>7 Languages</b> — Java, Kotlin, Python, JavaScript, TypeScript, C/C++, and Swift</li>
+  <li><b>84 Precise Rules + 12 Secret Rules</b> — SQL / NoSQL / command / code / template injection, XSS, SSRF, open redirect, path traversal, unsafe deserialization, XXE, weak crypto and TLS, JWT verification, CSRF / CORS / cookie misconfiguration, and more, mapped to CWE and OWASP Top 10</li>
+  <li><b>Low Noise</b> — Rules are anchored on concrete APIs, scoped per language, skip comments, docstrings and minified lines, and can require file context; credential and TLS rules skip test sources. Every rule ships with positive and negative test samples</li>
+  <li><b>Languages</b> — Java, Kotlin, Python, JavaScript / TypeScript, Go, C/C++ and Swift, plus Dockerfile, YAML (Kubernetes, Compose, CloudFormation) and Spring <code>.properties</code> configuration</li>
+  <li><b>As-You-Type Scanning</b> — Findings highlighted inline in Java, Kotlin, Python, JavaScript and TypeScript files (can be switched off; files above the configurable size limit are skipped)</li>
 </ul>
 
 <h3>Secrets Detection</h3>
@@ -55,6 +56,7 @@
 
 
     <change-notes><![CDATA[
+<h3>2026.10.0</h3><ul><li>Changed: rule precision overhaul. Every rule is now scoped to its languages / file types, anchored on a concrete API and skips comments, docstrings and minified lines; ambiguous rules require file context, credential and TLS rules skip test sources, and one line reports each issue once. A scan of VulnSpeed's own sources went from 1,157 to 31 findings (production code: 850 to 0); Flask from 1,507 to 1, Express from 1,104 to 2, Spring PetClinic from 205 to 4, while the real vulnerabilities in OWASP NodeGoat and a vulnerable Flask app are still reported.</li><li>Removed: the catalogue shrank from 266 to 84 rules (plus 12 secret rules). Duplicates were merged; missing-annotation, code-quality, performance and "X without Y" heuristics that a line regex cannot judge were removed. Every remaining rule has positive and negative test samples.</li><li>Added: Dockerfile, YAML and <code>.properties</code> scanning (container, Kubernetes, Compose, IAM and Spring configuration rules), Go and C/C++ rules, and <code>.mjs</code> / <code>.jsx</code> / <code>.tsx</code> files.</li><li>Changed: <code>vendor</code>, <code>dist</code>, <code>target</code>, <code>out</code>, virtual environments and minified bundles (<code>*.min.js</code>) are no longer scanned.</li><li>Changed: plugin renamed to "VulnSpeed - Fast Regex SAST"; leftover GPU acceleration claims and the old "What's New" feature list were removed.</li></ul>
 <h3>2026.9.2</h3><ul><li>Added: standalone CLI <code>vulnspeed-cli-&lt;version&gt;.jar</code> (attached to every GitHub release): <code>scan</code> writes findings JSON and SARIF without an IDE, plus <code>baseline</code> and <code>enrich</code>, with exit codes for CI gating.</li><li>Added: Tools → VulnSpeed → Export Findings JSON, the input format of the CLI baseline and enrichment commands.</li><li>Fixed: README CI examples no longer call a non-existent <code>vulnspeedScan</code> Gradle task; they download and run the CLI jar.</li><li>Fixed: a project located in a hidden (dot-prefixed) directory is now scanned by Scan Project.</li></ul>
 <h3>2026.9.1</h3><ul><li>Fixed: "Enable real-time scanning" now switches the as-you-type editor highlighting on and off.</li><li>Fixed: "Max file size" is now enforced by editor highlighting, Scan File, Scan Project and scan on save.</li><li>Fixed: "Scan changed file on save" now scans supported files on save and updates the VulnSpeed tool window.</li><li>Removed: the telemetry switch (VulnSpeed never collected telemetry), the non-functional auto-fix switches and the empty global inspection.</li></ul>
 <h3>2026.9.0</h3><ul><li>Changed: Plugin description and README now list only features that actually ship: the never-wired GPU acceleration, taint analysis, AI false-positive filtering, custom rules and compliance report claims were removed, together with the unused analyzer classes behind them.</li><li>Changed: Declares K2 Kotlin plugin mode compatibility.</li><li>Changed: HTML report footer no longer claims GPU acceleration.</li></ul>
@@ -84,19 +86,6 @@
             <li><b>Fixed archive extraction</b> — Rebuilt plugin distribution to fix "archive cannot be extracted" error on JetBrains Marketplace</li>
         </ul>
 
-        <h3>What's New</h3>
-        <ul>
-            <li><b>Real-Time Vulnerability Detection</b> - Finds OWASP Top 10 and CWE Top 25 vulnerabilities as you type with inline severity highlighting</li>
-            <li><b>Multi-Language Support</b> - Full scanning for Java, Python, JavaScript, TypeScript, C/C++, and Swift</li>
-            <li><b>One-Click Auto-Fix</b> - Automated remediation suggestions applied instantly via Alt+Enter</li>
-            <li><b>File and Project Scanning</b> - On-demand scanning of individual files or entire projects with results in the VulnSpeed tool window</li>
-            <li><b>Security Dashboard</b> - Bottom panel displaying vulnerability list, statistics, severity breakdown, and quick access to fixes</li>
-            <li><b>GPU-Accelerated Scanning</b> - Metal, CUDA, and Vulkan accelerated engine for 50-100x faster analysis on large codebases</li>
-            <li><b>Advanced Taint Analysis</b> - Data flow and taint tracking to trace vulnerability propagation paths</li>
-            <li><b>AI False Positive Filtering</b> - Machine learning based filtering to reduce noise and surface real vulnerabilities</li>
-            <li><b>Compliance Reports</b> - Generate SOC 2, HIPAA, and PCI DSS compliance reports from scan results</li>
-            <li><b>Custom Security Rules</b> - Define organization-specific vulnerability patterns and detection rules</li>
-        </ul>
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>

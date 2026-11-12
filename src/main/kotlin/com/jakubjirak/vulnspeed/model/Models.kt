@@ -81,14 +81,17 @@ data class ScanStats(
     val linesOfCode: Long
 )
 
-data class DeviceInfo(
-    val backend: String,
-    val deviceName: String,
-    val computeUnits: Int,
-    val maxMemoryMb: Long,
-    val supportsFloat64: Boolean
-)
-
+/**
+ * A regex rule. [pattern] is matched line by line; the optional fields narrow
+ * where it applies so it only reports code it can meaningfully judge.
+ *
+ * @property languages language tags (see `SourceLanguages`) the rule applies to; empty = every scanned file.
+ * @property excludePattern a line that also matches this regex is not reported (e.g. a sanitizer on the same line).
+ * @property requiresInFile the rule only runs on files that contain a match for this regex somewhere.
+ * @property excludeIfFileContains the rule is skipped for files that contain a match for this regex (e.g. a hardening call).
+ * @property matchAnywhere also match inside comments and in very long (minified/generated) lines — used for secrets.
+ * @property skipTestFiles the rule does not run on test sources (test fixtures routinely use fake credentials, weak TLS, …).
+ */
 data class Rule(
     val id: String,
     val name: String,
@@ -97,5 +100,11 @@ data class Rule(
     val cwe: Int,
     val owasp: String,
     val pattern: String,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val languages: Set<String> = emptySet(),
+    val excludePattern: String? = null,
+    val requiresInFile: String? = null,
+    val excludeIfFileContains: String? = null,
+    val matchAnywhere: Boolean = false,
+    val skipTestFiles: Boolean = false,
 )
