@@ -6,6 +6,8 @@ to [Semantic-ish date versioning](https://jakumjirak.example) (`YYYY.M.release_o
 
 ## [Unreleased]
 
+## [2026.9.2] - 2026-11-12
+
 ### Added
 - **Standalone CLI** `vulnspeed-cli-<version>.jar`, attached to every GitHub release: `java -jar vulnspeed-cli.jar scan|baseline|enrich`.
   `scan --project=<dir> --out-json=<file> --out-sarif=<file> [--fail-on=severity:HIGH]` runs the plugin's rules without an IDE,
