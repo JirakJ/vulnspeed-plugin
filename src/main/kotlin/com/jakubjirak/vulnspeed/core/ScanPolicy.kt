@@ -19,6 +19,15 @@ object ScanPolicy {
     val SUPPORTED_EXTENSIONS: Set<String> =
         setOf("java", "kt", "py", "js", "ts", "swift", "cpp", "c", "h", "go", "rs")
 
+    /** Directory names never descended into by a project scan (besides hidden `.`-directories). */
+    val EXCLUDED_DIRECTORIES: Set<String> = setOf("node_modules", "build")
+
+    /** Upper bound on the number of files a single project scan covers. */
+    const val MAX_FILES_PER_SCAN = 1000
+
+    /** True when a project scan must not descend into a directory called [name]. */
+    fun isExcludedDirectory(name: String): Boolean = name.startsWith(".") || name in EXCLUDED_DIRECTORIES
+
     /** Size limit in bytes for a max-file-size setting; non-positive values are treated as 1 KB. */
     fun maxBytes(maxFileSizeKb: Int): Long = maxFileSizeKb.coerceAtLeast(1) * BYTES_PER_KB
 

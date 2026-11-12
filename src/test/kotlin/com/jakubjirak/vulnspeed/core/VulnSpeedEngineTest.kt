@@ -16,11 +16,11 @@ class VulnSpeedEngineTest {
     }
 
     private fun invokeParseVulnType(engine: VulnSpeedEngine, ruleId: String): VulnerabilityType {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
+        val method: Method = RuleScanner::class.java.getDeclaredMethod(
             "parseVulnType", String::class.java
         )
         method.isAccessible = true
-        return method.invoke(engine, ruleId) as VulnerabilityType
+        return method.invoke(engine.scanner, ruleId) as VulnerabilityType
     }
 
     private fun invokeScanWithRule(
@@ -30,20 +30,20 @@ class VulnSpeedEngineTest {
         rule: Rule,
         language: String
     ): List<Vulnerability> {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
+        val method: Method = RuleScanner::class.java.getDeclaredMethod(
             "scanWithRule", String::class.java, String::class.java, Rule::class.java, String::class.java
         )
         method.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return method.invoke(engine, content, filePath, rule, language) as List<Vulnerability>
+        return method.invoke(engine.scanner, content, filePath, rule, language) as List<Vulnerability>
     }
 
     private fun invokeGenerateFixSuggestion(engine: VulnSpeedEngine, rule: Rule): FixSuggestion? {
-        val method: Method = VulnSpeedEngine::class.java.getDeclaredMethod(
+        val method: Method = RuleScanner::class.java.getDeclaredMethod(
             "generateFixSuggestion", Rule::class.java
         )
         method.isAccessible = true
-        return method.invoke(engine, rule) as? FixSuggestion
+        return method.invoke(engine.scanner, rule) as? FixSuggestion
     }
 
     @Suppress("UNUSED_PARAMETER")

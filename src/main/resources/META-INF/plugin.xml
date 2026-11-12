@@ -38,7 +38,8 @@
 <h3>CI/CD</h3>
 <ul>
   <li><b>Security Baseline</b> — Snapshot accepted findings and surface only new regressions</li>
-  <li><b>CLI Entry Points</b> — Baseline compare and CVE enrichment runnable in your pipeline for gated security checks</li>
+  <li><b>Standalone CLI</b> — <code>vulnspeed-cli-&lt;version&gt;.jar</code> from the GitHub release runs the same rules in CI without an IDE: scan to findings JSON / SARIF, baseline compare and CVE enrichment, with exit codes for gating</li>
+  <li><b>Findings JSON Export</b> — Tools → VulnSpeed → Export Findings JSON feeds IDE scan results to the CLI</li>
 </ul>
 
 <h3>Requirements</h3>
@@ -188,6 +189,12 @@
             description="Export the latest VulnSpeed scan results as a SARIF 2.1.0 report for GitHub Code Scanning / GitLab SAST."/>
 
         <action
+            id="VulnSpeed.ExportFindingsJson"
+            class="com.jakubjirak.vulnspeed.report.ExportFindingsJsonAction"
+            text="Export Findings JSON"
+            description="Export the latest VulnSpeed scan findings as JSON for the VulnSpeed CLI (baseline compare, CVE enrichment)."/>
+
+        <action
             id="VulnSpeed.ExportHtml"
             class="com.jakubjirak.vulnspeed.report.ExportHtmlReportAction"
             text="Export HTML Report"
@@ -222,6 +229,7 @@
             <reference ref="VulnSpeed.ScanProject"/>
             <separator/>
             <reference ref="VulnSpeed.ExportSarif"/>
+            <reference ref="VulnSpeed.ExportFindingsJson"/>
             <reference ref="VulnSpeed.ExportHtml"/>
             <reference ref="VulnSpeed.ExportSbom"/>
             <separator/>

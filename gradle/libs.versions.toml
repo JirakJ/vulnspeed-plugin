@@ -2,11 +2,13 @@
 kotlin = "2.1.0"
 intellij-platform = "2.6.0"
 junit = "5.11.4"
+gson = "2.10.1"
 detekt = "1.23.7"
 
 [libraries]
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

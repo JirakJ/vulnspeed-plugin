@@ -31,6 +31,8 @@ Static application security testing (SAST) plugin for JetBrains IDEs. Real-time 
 - **Scan project** — right-click project folder → "Scan Project with VulnSpeed" for full project scanning
 - **VulnSpeed tool window** — bottom panel displaying vulnerability list and statistics
 - **Configurable settings** — toggle real-time scanning, set the max file size to scan, enable scan on save
+- **Standalone CLI for CI** — `vulnspeed-cli-<version>.jar` (attached to every GitHub release) runs the same rules without an IDE: scan to findings JSON / SARIF, baseline compare and CVE enrichment, with exit codes for gating
+- **Findings JSON export** — Tools → VulnSpeed → Export Findings JSON hands an IDE scan to the CLI
 
 ## Installation
 
@@ -63,8 +65,45 @@ Right-click in the editor → **Scan File with VulnSpeed**. Vulnerabilities appe
 ### Scan a Project
 Right-click a project folder → **Scan Project with VulnSpeed**. Review all findings in the tool window with severity levels and CWE/OWASP classifications.
 
+### Real-Time Scanning
+With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed. Switch it off in Settings → Tools → VulnSpeed if you prefer on-demand or on-save scans only.
+
 ### Fix Findings
 Each finding includes a fix suggestion (title, description, example code and references). Apply the change yourself, or accept the finding with a `// vulnspeed-ignore` comment.
+
+## Command-Line Scanner (CI)
+
+Every [GitHub release](https://github.com/JirakJ/vulnspeed-plugin/releases) ships a
+self-contained `vulnspeed-cli-<version>.jar` next to the plugin zip. It needs only a
+Java 17+ runtime (no IDE, no Gradle plugin in your build) and runs **the same rules**
+as the plugin, with the same skip rules: files above the max file size (default
+1000 KB) are skipped, `// vulnspeed-ignore` / `vulnspeed-ignore-file` comments are
+honoured, and hidden directories (`.git`, `.idea`, …), `node_modules` and `build`
+are not scanned.
+
+```bash
+VULNSPEED_VERSION=2026.9.2
+curl -fsSL -o vulnspeed-cli.jar \
+  "https://github.com/JirakJ/vulnspeed-plugin/releases/download/v${VULNSPEED_VERSION}/vulnspeed-cli-${VULNSPEED_VERSION}.jar"
+
+java -jar vulnspeed-cli.jar scan --project=. \
+  --out-json=build/vulnspeed/findings.json \
+  --out-sarif=build/vulnspeed/vulnspeed.sarif
+```
+
+| Command | What it does |
+|---------|--------------|
+| `scan --project=<dir> [--out-json=<file>] [--out-sarif=<file>] [--fail-on=severity:HIGH] [--max-file-size-kb=<n>] [--max-files=<n>]` | Scans the project, writes findings JSON and/or a SARIF 2.1.0 report and prints a summary. `--max-files` defaults to 1000 (the same cap as Scan Project); the CLI warns when it truncates. |
+| `baseline --create\|--compare --project=<dir> --findings=<file> ...` | Security baseline — see [below](#security-baseline--differential-scan). |
+| `enrich --findings=<file> ...` | CVE enrichment — see [below](#cve-enrichment-osv--nvd). |
+| `version` | Prints the CLI version. |
+
+Exit codes for all commands: `0` success, `1` bad arguments or IO error, `2` the
+`--fail-on` / `--fail-on-severity` policy was triggered.
+
+The findings JSON is the same format the IDE writes with **Tools → VulnSpeed →
+Export Findings JSON**, so you can also scan in the IDE, commit or upload the
+exported file, and run `baseline` / `enrich` over it in CI.
 
 ## Security Baseline & Differential Scan
 
@@ -88,6 +127,16 @@ regressions. Paths outside the project root fall back to a `file://` prefix.
 
 ### In CI (GitHub Actions)
 
+Create the baseline once from a trusted branch and commit it:
+
+```bash
+java -jar vulnspeed-cli.jar scan --project=. --out-json=build/vulnspeed/findings.json
+java -jar vulnspeed-cli.jar baseline --create --project=. \
+  --findings=build/vulnspeed/findings.json --baseline=.vulnspeed-baseline.json
+```
+
+Then gate pull requests on new findings only:
+
 ```yaml
 name: Security Gate
 on:
@@ -95,25 +144,30 @@ on:
 jobs:
   vulnspeed:
     runs-on: ubuntu-latest
+    env:
+      VULNSPEED_VERSION: 2026.9.2
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run VulnSpeed scan
-        run: ./gradlew vulnspeedScan # produces build/reports/vulnspeed/findings.json and vulnspeed-report.sarif
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+      - uses: actions/setup-java@v4
         with:
-          sarif_file: build/reports/vulnspeed/vulnspeed-report.sarif
+          distribution: temurin
+          java-version: 17
+
+      - name: Download VulnSpeed CLI
+        run: |
+          curl -fsSL -o vulnspeed-cli.jar \
+            "https://github.com/JirakJ/vulnspeed-plugin/releases/download/v${VULNSPEED_VERSION}/vulnspeed-cli-${VULNSPEED_VERSION}.jar"
+
+      - name: Scan
+        run: java -jar vulnspeed-cli.jar scan --project="$PWD" --out-json=build/vulnspeed/findings.json
 
       - name: Differential scan vs baseline
         run: |
-          java -cp build/libs/vulnspeed-plugin-*.jar \
-            com.jakubjirak.vulnspeed.baseline.VulnBaselineCli \
-            --compare \
+          java -jar vulnspeed-cli.jar baseline --compare \
             --project="$PWD" \
             --baseline=.vulnspeed-baseline.json \
-            --findings=build/reports/vulnspeed/findings.json \
+            --findings=build/vulnspeed/findings.json \
             --output=md \
             --output-file=vulnspeed-diff.md \
             --fail-on=severity:HIGH
@@ -125,40 +179,41 @@ jobs:
           path: vulnspeed-diff.md
 ```
 
-The CLI exits `2` when `--fail-on` trips, `0` otherwise — so the job fails the
-PR check only when HIGH/CRITICAL regressions are introduced. Use `--create` to
-refresh the baseline from a trusted branch.
-
-### Real-Time Scanning
-With real-time scanning enabled (default), vulnerabilities are detected and highlighted as you type — no manual scan needed. Switch it off in Settings → Tools → VulnSpeed if you prefer on-demand or on-save scans only.
+`baseline --compare` exits `2` when `--fail-on` trips (`regression` = any new
+finding, `severity:HIGH` = a new HIGH or CRITICAL finding), `0` otherwise — so the
+job fails the PR check only when new findings at that level are introduced.
+Re-run `--create` to accept the current state.
 
 ## CVE Enrichment (OSV + NVD)
 
-VulnSpeed enriches scan findings whose `ruleId` contains a `CVE-YYYY-NNNNN`
-identifier with CVSS score & vector, textual severity, CWE mappings, publish /
-modify dates, reference links and fixed versions. Data is pulled from
-[OSV.dev](https://osv.dev) first, with [NVD](https://nvd.nist.gov) as fallback.
+VulnSpeed enriches findings whose rule id, id, name or tags contain a
+`CVE-YYYY-NNNNN` identifier with CVSS score & vector, textual severity, CWE
+mappings, publish / modify dates, reference links and fixed versions. Data is
+pulled from [OSV.dev](https://osv.dev) first, with [NVD](https://nvd.nist.gov) as
+fallback. VulnSpeed's built-in rules are CWE-based and carry no CVE id, so their
+findings pass through unchanged; enrichment is useful for findings JSON that
+references CVEs.
 
 ### Offline-first cache
 
 Responses are stored in a TTL-bound disk cache and reused across runs:
 
-- Inside the IDE: `<configPath>/vulnspeed/cve-cache/` (per `PathManager`).
-- In CLI / CI: `~/.vulnspeed/cve-cache/` (or `$VULNSPEED_HOME/cve-cache`).
+- Inside the IDE: `<IDE config dir>/vulnspeed/cve-cache/`.
+- CLI: `~/.vulnspeed/cve-cache/` (override with `--cache-dir`).
 
 Each CVE is a JSON file named `<CVE-ID>.json`. Deleting the directory forces a
 refresh. Use `--offline` to require cache hits only (no network calls).
 
 ### In the IDE
 
-**Tools → VulnSpeed → Enrich Findings with CVE Metadata** opens a table of the
+**Tools → VulnSpeed → Enrich Vulnerabilities (OSV / NVD)** opens a table of the
 last scan's vulnerabilities resolved against OSV/NVD. Copy a Markdown report
 for a PR, export JSON, or open the referenced advisories.
 
-### Headless CLI
+### Command line
 
 ```bash
-java -cp vulnspeed.jar com.jakubjirak.vulnspeed.enrichment.CveEnrichmentCli \
+java -jar vulnspeed-cli.jar enrich \
   --findings=build/vulnspeed/findings.json \
   --out=build/vulnspeed/enriched.md \
   --format=md \
@@ -169,38 +224,35 @@ Flags:
 
 | Flag | Description |
 |------|-------------|
-| `--findings=PATH` | JSON array of `Vulnerability` objects (from `--output=json` baseline CLI). |
-| `--out=PATH` | Output file (Markdown or JSON). |
-| `--format=md\|json` | Report format (default `md`). |
-| `--offline` | Disable network; use cache only. |
-| `--cache-dir=PATH` | Override cache location. |
-| `--cache-ttl-hours=N` | TTL for cached entries (default 168 = 7 days). |
-| `--fail-on-severity=LOW\|MEDIUM\|HIGH\|CRITICAL` | Exit `2` if any enriched finding meets or exceeds the level. |
-| `--timeout-ms=N` | Per-request timeout (default 10000). |
-
-Exit codes: `0` success, `1` fatal error, `2` severity policy tripped.
+| `--findings=PATH` | Findings JSON from `scan --out-json` or **Export Findings JSON** (required). |
+| `--out=PATH` | Output file; prints to stdout when omitted. |
+| `--format=json\|md` | Report format (default `json`). |
+| `--offline` | Disable network; use the cache only. |
+| `--cache-dir=PATH` | Override the cache location. |
+| `--max-age-days=N` | Maximum age of cached entries (default 7). |
+| `--nvd-key=KEY` | NVD API key (or set `NVD_API_KEY`). |
+| `--fail-on-severity=LOW\|MEDIUM\|HIGH\|CRITICAL` | Exit `2` if any finding meets or exceeds the level. |
 
 ### In CI (GitHub Actions)
 
 ```yaml
-- name: Enrich findings
-  run: |
-    java -cp build/libs/vulnspeed.jar \
-      com.jakubjirak.vulnspeed.enrichment.CveEnrichmentCli \
-      --findings=build/vulnspeed/findings.json \
-      --out=build/vulnspeed/enriched.md \
-      --format=md \
-      --fail-on-severity=HIGH
 - uses: actions/cache@v4
   with:
     path: ~/.vulnspeed/cve-cache
     key: vulnspeed-cve-${{ runner.os }}
+- name: Enrich findings
+  run: |
+    java -jar vulnspeed-cli.jar enrich \
+      --findings=build/vulnspeed/findings.json \
+      --out=build/vulnspeed/enriched.md \
+      --format=md
 ```
 
 ## Building from Source
 
 ```bash
-./gradlew buildPlugin
+./gradlew buildPlugin   # plugin zip in build/distributions/
+./gradlew cliJar        # build/cli/vulnspeed-cli-<version>.jar
 ```
 
 ## SARIF Report Export
@@ -214,6 +266,8 @@ DevOps, SonarQube, and DefectDojo.
 1. Run a scan (**Scan File / Scan Project with VulnSpeed**).
 2. Open **Tools → VulnSpeed → Export SARIF Report**.
 3. Choose a destination — defaults to `vulnspeed-report.sarif` in the project root.
+
+Without an IDE, `java -jar vulnspeed-cli.jar scan --project=. --out-sarif=<file>` writes the same report.
 
 The exporter writes UTF-8, generates stable `partialFingerprints` so repeated
 runs deduplicate in downstream systems, and is 100% schema-compliant with
@@ -234,19 +288,28 @@ jobs:
     permissions:
       security-events: write
       contents: read
+    env:
+      VULNSPEED_VERSION: 2026.9.2
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
       - name: Run VulnSpeed scan
-        run: ./gradlew vulnspeedScan --console=plain
+        run: |
+          curl -fsSL -o vulnspeed-cli.jar \
+            "https://github.com/JirakJ/vulnspeed-plugin/releases/download/v${VULNSPEED_VERSION}/vulnspeed-cli-${VULNSPEED_VERSION}.jar"
+          java -jar vulnspeed-cli.jar scan --project="$PWD" --out-sarif=build/vulnspeed/vulnspeed.sarif
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: build/reports/vulnspeed-report.sarif
+          sarif_file: build/vulnspeed/vulnspeed.sarif
           category: vulnspeed
 ```
 
-For GitLab, point the `sast` report artifact at `vulnspeed-report.sarif`; for
-Azure DevOps use the SARIF SAST Scans Tab extension.
+For GitLab, point the `sast` report artifact at the SARIF file; for Azure DevOps
+use the SARIF SAST Scans Tab extension.
 
 ## CycloneDX SBOM Export
 
